@@ -1,33 +1,45 @@
 # Modelo de calidad de agua
 
-Análisis exploratorio (EDA) y modelos de pronóstico para los datos del
-proyecto **Simulador_sensor** (red D-Town, Costa Rica): cloro residual libre,
-turbidez, pH, temperatura y presión en 21 sensores, cada 15 minutos.
+Análisis exploratorio (EDA) y modelos de pronóstico de calidad de agua para una
+red de distribución con 21 sensores. Cada sensor reporta cada 15 minutos:
+
+| Parámetro | Columna | Unidad |
+|---|---|---|
+| Cloro residual libre | `CL2_<nodo>` | mg/L |
+| Temperatura | `TEMP_<nodo>` | °C |
+| Turbidez | `TURB_<nodo>` | UNT |
+| pH | `PH_<nodo>` | — |
+| Presión | `P_<nodo>` | m |
+
+Además se registra el caudal de salida de la fuente (`Q_R1`, L/s) y la lluvia
+(`lluvia_mm_h`).
 
 Objetivo: pronosticar las próximas 24 h con al menos 80 % de exactitud
 (definición en el notebook de modelos), usando también datos climáticos.
 
-## Relación con el simulador
+## Datos
+
+Los datos van de enero de 2025 a diciembre de 2026, divididos en tres
+periodos consecutivos:
+
+| Partición | Periodo | Uso |
+|---|---|---|
+| entrenamiento | ene 2025 – abr 2026 | ajustar los modelos |
+| validación | may – ago 2026 | elegir hiperparámetros y umbrales |
+| prueba | sep – dic 2026 | evaluación final |
+
+Los datos no se versionan en este repositorio. Por defecto se leen de
+`../Simulador_sensor/datos/dtown/final`. Para usar otra carpeta, define la
+variable de entorno antes de abrir Jupyter:
 
 ```
-Simulador_sensor  ──(exporta datos/dtown/final/*.parquet)──►  Modelo_calidad_agua
-```
-
-Este proyecto no copia los datos: los lee de la carpeta del simulador. Si el
-dataset se regenera (por ejemplo, con el clima del IMN), solo hay que volver a
-correr los notebooks.
-
-Por defecto busca los datos en `../Simulador_sensor/datos/dtown/final`. Si el
-simulador está en otro lugar, define la variable de entorno antes de abrir Jupyter:
-
-```
-set DATOS_SIMULADOR=D:\ruta\a\Simulador_sensor\datos\dtown\final
+set DATOS_SIMULADOR=D:\ruta\a\los\datos
 ```
 
 ## Estructura
 
 ```
-src/          funciones compartidas (carga de datos)
+src/          funciones compartidas (carga de datos, estilo de figuras)
 notebooks/    EDA y modelos, numerados en el orden de lectura
 figuras/      figuras exportadas para el informe
 ```

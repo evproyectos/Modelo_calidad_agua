@@ -1,0 +1,13 @@
+# entorno
+venv/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# datos: se leen del simulador, no se versionan aquí
+datos/
+*.parquet
+
+# configuración local
+.env

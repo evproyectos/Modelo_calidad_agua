@@ -18,7 +18,11 @@ dataset se regenera (por ejemplo, con el clima del IMN), solo hay que volver a
 correr los notebooks.
 
 Por defecto busca los datos en `../Simulador_sensor/datos/dtown/final`. Si el
-simulador está en otro lugar, copia `.env.ejemplo` como `.env` y ajusta la ruta.
+simulador está en otro lugar, define la variable de entorno antes de abrir Jupyter:
+
+```
+set DATOS_SIMULADOR=D:\ruta\a\Simulador_sensor\datos\dtown\final
+```
 
 ## Estructura
 

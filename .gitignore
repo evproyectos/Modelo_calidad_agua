@@ -5,7 +5,7 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 
-# datos: se leen del simulador, no se versionan aquí
+# datos: no se versionan aquí
 datos/
 *.parquet
 

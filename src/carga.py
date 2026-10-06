@@ -1,24 +1,20 @@
 """
-Carga del dataset generado por el proyecto Simulador_sensor.
+Carga de los datos de los sensores.
 
-Los datos NO se copian: se leen directamente de la carpeta de exportación del
-simulador, así que al regenerar el dataset (por ejemplo, con el clima del IMN)
-basta con volver a correr los notebooks.
+Los datos se leen de la carpeta indicada en la variable de entorno
+DATOS_SENSORES. Si no está definida, se usan los de la carpeta datos/ de este
+proyecto (no se versiona en git).
 
-Ruta por defecto: ../Simulador_sensor/datos/dtown/final
-Para cambiarla, definir la variable de entorno DATOS_SIMULADOR (o un archivo
-.env en la raíz de este proyecto, ver .env.ejemplo).
-
-Archivos que se leen (escritos por simulador/exportar.py):
+Archivos que se leen:
   entrenamiento / validacion / prueba .parquet
-      Lo que reportarían los sensores, cada 15 min, más las etiquetas:
+      Lecturas de los sensores, cada 15 min, más las etiquetas:
         CL2_<nodo>, TEMP_<nodo>, TURB_<nodo>, PH_<nodo>, P_<nodo>   lecturas
         Q_R1, lluvia_mm_h                                           caudal de la fuente y lluvia
         falla_<PARAM>_<nodo>   0 = sin falla; si no, código de falla del sensor
         evento_<nodo>          tipo de evento visible en ese sensor (0 = normal)
         evento_visible         evento visible en algún sensor (0-4)
         evento_red             evento ocurriendo en la red, aunque no se vea
-  verdad_<particion>.parquet   los mismos parámetros sin ruido ni fallas (valor real)
+  verdad_<particion>.parquet   valor de referencia de cada parámetro, sin ruido ni fallas
   sensores.csv, fallas_sensor_catalogo.csv, metadatos.json
 """
 
@@ -37,25 +33,13 @@ NOMBRES_PARAMETRO = {"CL2": "Cloro residual libre", "TEMP": "Temperatura", "TURB
 TIPOS_EVENTO = {0: "normal", 1: "contaminacion", 2: "falla_cloro", 3: "turbidez_fuente", 4: "falla_ph"}
 
 
-def _leer_env():
-    archivo = RAIZ / ".env"
-    if archivo.exists():
-        for linea in archivo.read_text(encoding="utf-8").splitlines():
-            linea = linea.strip()
-            if linea and not linea.startswith("#") and "=" in linea:
-                k, v = linea.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
-
-
 def carpeta_datos():
-    _leer_env()
-    ruta = Path(os.environ.get("DATOS_SIMULADOR",
-                               RAIZ.parent / "Simulador_sensor" / "datos" / "dtown" / "final"))
+    ruta = Path(os.environ.get("DATOS_SENSORES", RAIZ / "datos"))
     if not (ruta / "entrenamiento.parquet").exists():
         raise FileNotFoundError(
-            f"No se encontró el dataset en {ruta}.\n"
-            "Corre primero la exportación en Simulador_sensor (python -m simulador.exportar) "
-            "o define DATOS_SIMULADOR en un archivo .env.")
+            f"No se encontraron los datos en {ruta}.\n"
+            "Copia los archivos de datos en la carpeta datos/ del proyecto "
+            "o define la variable de entorno DATOS_SENSORES con su ubicación.")
     return ruta
 
 

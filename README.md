@@ -28,7 +28,13 @@ periodos consecutivos:
 | validación | may – ago 2026 | elegir hiperparámetros y umbrales |
 | prueba | sep – dic 2026 | evaluación final |
 
-Los datos no se versionan en este repositorio. 
+Los datos no se versionan en este repositorio. Se leen de la carpeta indicada
+en la variable de entorno `DATOS_SENSORES`, o de `datos/` dentro del proyecto
+si no está definida. Para definirla de forma permanente en Windows (luego hay
+que reabrir la terminal y Jupyter):
+
+```
+setx DATOS_SENSORES "D:\ruta\a\los\datos"
 ```
 
 ## Estructura

@@ -28,12 +28,7 @@ periodos consecutivos:
 | validación | may – ago 2026 | elegir hiperparámetros y umbrales |
 | prueba | sep – dic 2026 | evaluación final |
 
-Los datos no se versionan en este repositorio. Por defecto se leen de
-`../Simulador_sensor/datos/dtown/final`. Para usar otra carpeta, define la
-variable de entorno antes de abrir Jupyter:
-
-```
-set DATOS_SIMULADOR=D:\ruta\a\los\datos
+Los datos no se versionan en este repositorio. 
 ```
 
 ## Estructura

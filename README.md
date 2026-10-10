@@ -14,8 +14,25 @@ red de distribución con 21 sensores. Cada sensor reporta cada 15 minutos:
 Además se registra el caudal de salida de la fuente (`Q_R1`, L/s) y la lluvia
 (`lluvia_mm_h`).
 
-Objetivo: pronosticar las próximas 24 h con al menos 80 % de exactitud
-(definición en el notebook de modelos), usando también datos climáticos.
+Objetivo: pronosticar las próximas 24 h con al menos 80 % de exactitud,
+usando también datos climáticos.
+
+## Meta
+
+Un pronóstico a 24 h se considera **acertado** si queda dentro de la tolerancia
+del valor observado (promedio horario):
+
+| Parámetro | Tolerancia |
+|---|---|
+| Cloro residual libre | ± 0,1 mg/L |
+| Turbidez | ± 20 % del valor, mínimo ± 0,2 UNT |
+| pH | ± 0,1 |
+
+La meta es que el modelo acierte **al menos el 80 %** de los pronósticos en cada
+uno de los tres parámetros, en operación normal, **y que supere al pronóstico
+ingenuo** "igual que ayer a la misma hora", que logra 75 % en cloro, 52 % en
+turbidez y 80 % en pH (notebook 03). El acierto durante eventos se reporta por
+separado. La definición está en `src/metas.py`.
 
 ## Datos
 
@@ -28,19 +45,12 @@ periodos consecutivos:
 | validación | may – ago 2026 | elegir hiperparámetros y umbrales |
 | prueba | sep – dic 2026 | evaluación final |
 
-Los datos no se versionan en este repositorio. Se leen de la carpeta indicada
-en la variable de entorno `DATOS_SENSORES`, o de `datos/` dentro del proyecto
-si no está definida. Para definirla de forma permanente en Windows (luego hay
-que reabrir la terminal y Jupyter):
-
-```
-setx DATOS_SENSORES "D:\ruta\a\los\datos"
-```
+Los datos no se versionan en este repositorio.
 
 ## Estructura
 
 ```
-src/          funciones compartidas (carga de datos, estilo de figuras)
+src/          funciones compartidas (carga, limpieza, eventos, meta, figuras)
 notebooks/    EDA y modelos, numerados en el orden de lectura
 figuras/      figuras exportadas para el informe
 ```

@@ -9,7 +9,7 @@ Una lectura de calidad (CL2, TEMP, TURB, PH) se considera NO válida si:
 
 import numpy as np
 
-from src import carga
+from . import carga
 
 PRESION_MINIMA = 1.0          # m
 CALIDAD = ["CL2", "TEMP", "TURB", "PH"]

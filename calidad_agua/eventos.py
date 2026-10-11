@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from src.carga import TIPOS_EVENTO
+from .carga import TIPOS_EVENTO
 
 
 def episodios(serie):

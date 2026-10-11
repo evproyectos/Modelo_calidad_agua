@@ -32,7 +32,7 @@ La meta es que el modelo acierte **al menos el 80 %** de los pronósticos en cad
 uno de los tres parámetros, en operación normal, **y que supere al pronóstico
 ingenuo** "igual que ayer a la misma hora", que logra 75 % en cloro, 52 % en
 turbidez y 80 % en pH (notebook 03). El acierto durante eventos se reporta por
-separado. La definición está en `src/metas.py`.
+separado. La definición está en `calidad_agua/metas.py`.
 
 ## Datos
 
@@ -50,8 +50,10 @@ Los datos no se versionan en este repositorio.
 ## Estructura
 
 ```
-src/          funciones compartidas (carga, limpieza, eventos, meta, figuras)
+calidad_agua/ paquete de Python con el código compartido: carga, limpieza, variables,
+              modelos (árboles, LSTM, detector), meta y figuras
 notebooks/    EDA y modelos, numerados en el orden de lectura
+pruebas/      pruebas del paquete
 figuras/      figuras exportadas para el informe
 modelos/      modelos entrenados (se generan con los notebooks 06, 07 y 08; no se versionan)
 ```
@@ -65,8 +67,25 @@ pip install -r requirements.txt
 jupyter notebook
 ```
 
-Los notebooks agregan la raíz del proyecto al `sys.path`, así que
-`from src import carga` funciona desde la carpeta `notebooks/`.
+`requirements.txt` instala este proyecto como el paquete **`calidad_agua`** en modo
+editable (`pip install -e .`), con todas sus dependencias. Así los notebooks y
+otros proyectos (por ejemplo, el servicio de monitoreo) usan exactamente el mismo
+código: `from calidad_agua import variables, detector`.
+
+Para usarlo desde otro proyecto, en el entorno de ese proyecto:
+
+```
+pip install -e "D:\Practica_Profesional\Modelo_calidad_agua[red]"
+```
+
+### Prueba de variables en vivo
+
+Comprueba que las variables calculadas con solo los últimos 7 días de lecturas y
+sin etiquetas (como en operación) son idénticas a las usadas al entrenar:
+
+```
+python pruebas/prueba_variables_en_vivo.py
+```
 
 ## Notebooks
 

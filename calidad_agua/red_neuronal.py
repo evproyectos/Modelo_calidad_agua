@@ -1,7 +1,7 @@
 """
 Pronóstico a 24 h con una red neuronal recurrente (TensorFlow/Keras, LSTM).
 
-Mismo problema que src/modelo.py (cambio de CL2, TURB y PH dentro de 24 h, turbidez en escala
+Mismo problema que calidad_agua/modelo.py (cambio de CL2, TURB y PH dentro de 24 h, turbidez en escala
 logarítmica), pero en vez de resúmenes calculados a mano la red recibe la SECUENCIA de las
 últimas VENTANA_H horas y aprende sola qué patrones usar.
 
@@ -25,7 +25,6 @@ import keras
 from keras import layers
 import tensorflow as tf
 
-from src.carga import sensores as _sensores
 
 FUENTE = "J280"
 VENTANA_H = 48
@@ -38,10 +37,14 @@ def _log(x):
     return np.log(np.clip(x, PISO_LOG, None))
 
 
-def preparar(h, tipicos):
+def preparar(h, tipicos, normalizacion=None, h_objetivo=None):
     """
-    Arreglos por sensor listos para la red. `h` es la tabla horaria de src.variables.horario y
-    `tipicos` el diccionario de src.variables.tabla. Devuelve un diccionario con todo lo necesario.
+    Arreglos por sensor listos para la red. `h` es la tabla horaria de calidad_agua.variables.horario y
+    `tipicos` el diccionario de calidad_agua.variables.tabla. Devuelve un diccionario con todo lo necesario.
+
+    `normalizacion`: medias y desviaciones guardadas al entrenar. Si es None se
+    calculan con el periodo de entrenamiento de `h`. En operación SIEMPRE se pasan las guardadas.
+    `h_objetivo`: de dónde salen los objetivos (valor real, limpio de fallas); si es None, `h`.
     """
     S = [c[4:] for c in h.columns if c.startswith("CL2_")]
     entr = (h["particion"] == "entrenamiento").values
@@ -68,29 +71,35 @@ def preparar(h, tipicos):
         secuencias.append(X)
         actual = np.column_stack([_log(h[f"{p}_{n}"].values) if p == "TURB" else h[f"{p}_{n}"].values
                                   for p in SALIDAS])
-        futuro = np.vstack([actual[HORIZONTE_H:], np.full((HORIZONTE_H, len(SALIDAS)), np.nan)])
+        ho = h if h_objetivo is None else h_objetivo
+        real = np.column_stack([_log(ho[f"{p}_{n}"].values) if p == "TURB" else ho[f"{p}_{n}"].values
+                                for p in SALIDAS])
+        futuro = np.vstack([real[HORIZONTE_H:], np.full((HORIZONTE_H, len(SALIDAS)), np.nan)])
         objetivos.append((futuro - actual).astype("float32"))
         base.append(actual.astype("float32"))
     nombres = ["CL2", "TURB", "PH", "TEMP", "P"] + list(comunes)
 
-    # normalización con el periodo de entrenamiento
-    todo = np.concatenate([s[entr] for s in secuencias])
-    media, desv = np.nanmean(todo, axis=0), np.nanstd(todo, axis=0) + 1e-6
-    obj_todo = np.concatenate([o[entr] for o in objetivos])
-    media_y, desv_y = np.zeros(len(SALIDAS), "float32"), (np.nanstd(obj_todo, axis=0) + 1e-6).astype("float32")
+    estaticas = np.array([[tipicos[(p, n)] for p in SALIDAS] for n in S], dtype="float32")
+    estaticas[:, 1] = _log(estaticas[:, 1])
+
+    if normalizacion is None:          # normalización con el periodo de entrenamiento
+        todo = np.concatenate([s[entr] for s in secuencias])
+        obj_todo = np.concatenate([o[entr] for o in objetivos])
+        normalizacion = {"media": np.nanmean(todo, axis=0), "desv": np.nanstd(todo, axis=0) + 1e-6,
+                         "desv_y": (np.nanstd(obj_todo, axis=0) + 1e-6).astype("float32"),
+                         "media_est": estaticas.mean(axis=0), "desv_est": estaticas.std(axis=0) + 1e-6}
+    media, desv, desv_y = normalizacion["media"], normalizacion["desv"], normalizacion["desv_y"]
     for i in range(len(S)):
         s = (secuencias[i] - media) / desv
         faltante = np.isnan(s[:, :4]).astype("float32")              # marcas para CL2, TURB, PH, TEMP propios
         secuencias[i] = np.column_stack([np.nan_to_num(s, nan=0.0), faltante]).astype("float32")
         objetivos[i] = objetivos[i] / desv_y
-    estaticas = np.array([[tipicos[(p, n)] for p in SALIDAS] for n in S], dtype="float32")
-    estaticas[:, 1] = _log(estaticas[:, 1])
-    estaticas = (estaticas - estaticas.mean(axis=0)) / (estaticas.std(axis=0) + 1e-6)
+    estaticas = ((estaticas - normalizacion["media_est"]) / normalizacion["desv_est"]).astype("float32")
     return {"sensores": S, "fechas": h.index, "particion": h["particion"].values,
             "evento": np.column_stack([h[f"evento_{n}"].values for n in S]),
             "secuencias": secuencias, "objetivos": objetivos, "base": base, "estaticas": estaticas,
             "variables": nombres + ["falta_CL2", "falta_TURB", "falta_PH", "falta_TEMP"],
-            "media": media, "desv": desv, "desv_y": desv_y}
+            "normalizacion": normalizacion, "desv_y": desv_y}
 
 
 def indices(datos, particion, cada_h=1, solo_normal=False):

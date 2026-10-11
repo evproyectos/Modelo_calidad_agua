@@ -3,6 +3,8 @@ venv/
 .venv/
 __pycache__/
 *.pyc
+*.egg-info/
+build/
 .ipynb_checkpoints/
 
 # datos: no se versionan aquí

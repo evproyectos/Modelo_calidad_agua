@@ -18,7 +18,7 @@ Variables (por lo encontrado en el EDA):
 import numpy as np
 import pandas as pd
 
-from src import carga, calidad
+from . import carga, calidad
 
 FUENTE = "J280"
 PARAMS = ["CL2", "TURB", "PH", "TEMP"]
@@ -30,18 +30,24 @@ def horario(t15):
     h = num.resample("1h").mean()
     S = carga.sensores(t15)
     for n in S:
-        h[f"evento_{n}"] = t15[f"evento_{n}"].resample("1h").max()
+        # en operación no hay etiquetas: si la columna no existe, queda vacía
+        h[f"evento_{n}"] = t15[f"evento_{n}"].resample("1h").max() if f"evento_{n}" in t15 else np.nan
         h[f"lecturas_{n}"] = t15[f"CL2_{n}"].notna().resample("1h").sum()      # lecturas válidas en la hora
     h["lluvia_mm"] = t15["lluvia_mm_h"].resample("1h").mean()
-    h["particion"] = t15["particion"].resample("1h").first()
+    h["particion"] = t15["particion"].resample("1h").first() if "particion" in t15 else None
     return h
 
 
-def tabla(h, horizonte=24, tipicos=None):
+def tabla(h, horizonte=24, tipicos=None, h_objetivo=None):
     """
     Tabla larga (sensor × hora) con variables y objetivos.
+    `h`: tabla horaria de las ENTRADAS. Debe limpiarse igual que en operación
+    (calidad.lecturas_operativas), porque en vivo no hay etiquetas de falla.
+    `h_objetivo`: tabla horaria de la que salen los OBJETIVOS (el valor real que se quiere
+    pronosticar, limpio de fallas del sensor: calidad.lecturas_validas). Si es None se usa `h`.
     `tipicos`: valor típico de cada sensor y parámetro (si es None se calcula con el
-    periodo de entrenamiento y se devuelve para reutilizarlo).
+    periodo de entrenamiento y se devuelve para reutilizarlo). En operación se pasan los
+    guardados al entrenar.
     """
     S = [c[4:] for c in h.columns if c.startswith("CL2_")]
     entr = h["particion"] == "entrenamiento"
@@ -86,7 +92,7 @@ def tabla(h, horizonte=24, tipicos=None):
                 d[f"{p}_desv{k}h"] = x.rolling(k, min_periods=k // 2).std()
             d[f"{p}_vs_fuente"] = x - h[f"{p}_{FUENTE}"]
             # objetivo: valor en t + horizonte
-            d[f"objetivo_{p}"] = x.shift(-horizonte)
+            d[f"objetivo_{p}"] = (h if h_objetivo is None else h_objetivo)[f"{p}_{n}"].shift(-horizonte)
         d["P"] = h[f"P_{n}"]
         d["lecturas_hora"] = h[f"lecturas_{n}"]
         d["evento_objetivo"] = h[f"evento_{n}"].shift(-horizonte)

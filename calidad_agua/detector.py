@@ -20,8 +20,8 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from src import carga
-from src.eventos import episodios
+from . import carga
+from .eventos import episodios
 
 PARAMS = ["CL2", "TURB", "PH", "TEMP"]
 UMBRAL_DESVIO = {"CL2": 0.1, "TURB": 0.5, "PH": 0.2, "TEMP": 1.0}
@@ -36,9 +36,9 @@ def horario(t15):
     num = t15[[c for c in t15.columns if c.split("_")[0] in PARAMS + ["P", "Q"] or c == "lluvia_mm_h"]]
     h = num.resample("1h").mean()
     for n in carga.sensores(t15):
-        h[f"evento_{n}"] = t15[f"evento_{n}"].resample("1h").max()
+        h[f"evento_{n}"] = t15[f"evento_{n}"].resample("1h").max() if f"evento_{n}" in t15 else np.nan
         h[f"lecturas_{n}"] = t15[f"CL2_{n}"].notna().resample("1h").sum()
-    h["particion"] = t15["particion"].resample("1h").first()
+    h["particion"] = t15["particion"].resample("1h").first() if "particion" in t15 else None
     return h
 
 

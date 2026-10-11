@@ -53,7 +53,7 @@ Los datos no se versionan en este repositorio.
 src/          funciones compartidas (carga, limpieza, eventos, meta, figuras)
 notebooks/    EDA y modelos, numerados en el orden de lectura
 figuras/      figuras exportadas para el informe
-modelos/      modelos entrenados (se generan con los notebooks 06 y 07; no se versionan)
+modelos/      modelos entrenados (se generan con los notebooks 06, 07 y 08; no se versionan)
 ```
 
 ## Instalación
@@ -79,3 +79,4 @@ Los notebooks agregan la raíz del proyecto al `sys.path`, así que
 | 05 | eventos | Cómo se ven los eventos y las fallas en los datos |
 | 06 | modelo_pronostico | Modelo de pronóstico a 24 h y evaluación contra la meta |
 | 07 | detector_eventos | Detector de eventos: alarmas, tipo de evento y falsas alarmas |
+| 08 | red_neuronal | Red LSTM (TensorFlow/Keras), comparación con los árboles y modelo final de pronóstico |

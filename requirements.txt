@@ -7,3 +7,5 @@ scikit-learn>=1.4
 statsmodels>=0.14
 jupyter
 ipykernel
+tensorflow>=2.16
+joblib

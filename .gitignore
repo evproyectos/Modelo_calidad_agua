@@ -12,5 +12,5 @@ datos/
 # configuración local
 .env
 
-# modelos entrenados: se regeneran corriendo el notebook 06
+# modelos entrenados: se regeneran corriendo los notebooks 06 y 07
 modelos/

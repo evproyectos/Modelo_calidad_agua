@@ -41,3 +41,32 @@ def lecturas_validas(t):
             col = f"{p}_{n}"
             t.loc[mascara_invalida(t, p, n), col] = np.nan
     return t
+
+
+# ---------------------------------------------------------------------------
+# Reglas que se pueden aplicar en operación (sin etiquetas de falla)
+# ---------------------------------------------------------------------------
+LECTURAS_PEGADO = 16          # 4 h sin ningún cambio = sensor pegado (notebook 01)
+
+
+def pegado(x, lecturas=LECTURAS_PEGADO):
+    """True donde la serie lleva `lecturas` valores seguidos idénticos (sin contar ceros)."""
+    sin_cambio = (x.diff() == 0).astype(int).rolling(lecturas - 1).sum() == lecturas - 1
+    return (sin_cambio & (x > 0)).values
+
+
+def lecturas_operativas(t):
+    """
+    Copia de la tabla con las lecturas no válidas en NaN, usando SOLO reglas que funcionan en
+    operación: presión mínima, rango físico y sensor pegado. No usa las columnas falla_*, que en
+    operación no existen. Las demás fallas (deriva, picos, ruido) quedan en los datos.
+    """
+    t = t.copy()
+    for n in carga.sensores(t):
+        for p in CALIDAD:
+            col = f"{p}_{n}"
+            x = t[col]
+            lo, hi = RANGO_FISICO[p]
+            malo = ((t[f"P_{n}"] < PRESION_MINIMA) | (x < lo) | (x > hi)).values | pegado(x)
+            t.loc[malo, col] = np.nan
+    return t

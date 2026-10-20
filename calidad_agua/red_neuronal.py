@@ -74,7 +74,9 @@ def preparar(h, tipicos, normalizacion=None, h_objetivo=None):
         ho = h if h_objetivo is None else h_objetivo
         real = np.column_stack([_log(ho[f"{p}_{n}"].values) if p == "TURB" else ho[f"{p}_{n}"].values
                                 for p in SALIDAS])
-        futuro = np.vstack([real[HORIZONTE_H:], np.full((HORIZONTE_H, len(SALIDAS)), np.nan)])
+        futuro = np.full_like(real, np.nan)                      # valor dentro de HORIZONTE_H horas
+        if len(real) > HORIZONTE_H:                              # (al arrancar puede haber menos horas)
+            futuro[:-HORIZONTE_H] = real[HORIZONTE_H:]
         objetivos.append((futuro - actual).astype("float32"))
         base.append(actual.astype("float32"))
     nombres = ["CL2", "TURB", "PH", "TEMP", "P"] + list(comunes)

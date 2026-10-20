@@ -16,3 +16,5 @@ datos/
 
 # modelos entrenados: se regeneran corriendo los notebooks 06, 07 y 08
 modelos/
+
+.vscode/

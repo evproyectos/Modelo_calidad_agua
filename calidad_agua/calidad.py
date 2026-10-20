@@ -23,6 +23,20 @@ NORMA = {
 }
 
 
+# Las lecturas se guardan en float32 (así se entrenaron los modelos). Los datos que llegan en
+# vivo por la API vienen en JSON y Python los lee como float64: si no se convierten, algunas
+# variables que comparan contra un umbral cambian en el último decimal y los modelos dan otro
+# resultado. Por eso la limpieza fija siempre el tipo.
+TIPO_LECTURAS = "float32"
+
+
+def _como_float32(t):
+    t = t.copy()
+    flotantes = t.select_dtypes(include="floating").columns
+    t[flotantes] = t[flotantes].astype(TIPO_LECTURAS)
+    return t
+
+
 def mascara_invalida(t, p, n):
     """True en las lecturas de `p` en el nodo `n` que no se deben usar."""
     x = t[f"{p}_{n}"]
@@ -35,7 +49,7 @@ def mascara_invalida(t, p, n):
 
 def lecturas_validas(t):
     """Copia de la tabla con las lecturas no válidas puestas en NaN."""
-    t = t.copy()
+    t = _como_float32(t)
     for n in carga.sensores(t):
         for p in CALIDAD:
             col = f"{p}_{n}"
@@ -61,7 +75,7 @@ def lecturas_operativas(t):
     operación: presión mínima, rango físico y sensor pegado. No usa las columnas falla_*, que en
     operación no existen. Las demás fallas (deriva, picos, ruido) quedan en los datos.
     """
-    t = t.copy()
+    t = _como_float32(t)
     for n in carga.sensores(t):
         for p in CALIDAD:
             col = f"{p}_{n}"

@@ -103,7 +103,7 @@ python pruebas/prueba_variables_en_vivo.py
 | 01 | calidad_de_datos | Faltantes, cortes de comunicación, fallas de sensor |
 | 02 | distribuciones | Rangos por parámetro y sensor, comparación con la norma |
 | 03 | temporal | Ciclos diarios y semanales, estacionalidad, autocorrelación |
-| 04 | clima | Relación de lluvia y temperatura con turbidez, cloro y pH |
+| 04 | clima | Lluvia de la zona (IMN, estación ITCR San Carlos), su efecto en turbidez, cloro, pH y temperatura, y cuánto aportaría un pronóstico de lluvia |
 | 05 | eventos | Cómo se ven los eventos y las fallas en los datos |
 | 06 | modelo_pronostico | Modelo de pronóstico a 24 h y evaluación contra la meta |
 | 07 | detector_eventos | Detector de eventos: alarmas, tipo de evento y falsas alarmas |

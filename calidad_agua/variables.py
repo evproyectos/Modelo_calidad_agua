@@ -10,8 +10,11 @@ Variables (por lo encontrado en el EDA):
   - de la fuente (J280) y de la red: valores actuales y de hace unas horas, porque los
     cambios de la fuente llegan a los sensores con 1 a 16 h de retraso;
   - del sensor como lugar: identificador y valor típico (cloro muy distinto entre sensores);
-  - de calendario: hora del día y época del año (ciclo diario y anual);
-  - de clima y operación: lluvia acumulada reciente y caudal de la fuente;
+  - de calendario: hora del día (ciclo diario). La época del año NO se usa: con 16 meses de
+    entrenamiento el modelo ve cada época una sola vez y aprende cómo fue ese año en particular,
+    que no se repite el siguiente (notebook 06);
+  - de clima y operación: lluvia acumulada reciente (6, 24 y 72 h), lluvia pronosticada para las
+    próximas 24 h por tramos (calidad_agua.clima, si se pasa `pronostico`) y caudal de la fuente;
   - de calidad del dato: cuántas lecturas válidas tuvo la hora.
 """
 
@@ -38,7 +41,7 @@ def horario(t15):
     return h
 
 
-def tabla(h, horizonte=24, tipicos=None, h_objetivo=None):
+def tabla(h, horizonte=24, tipicos=None, h_objetivo=None, pronostico=None):
     """
     Tabla larga (sensor × hora) con variables y objetivos.
     `h`: tabla horaria de las ENTRADAS. Debe limpiarse igual que en operación
@@ -48,6 +51,8 @@ def tabla(h, horizonte=24, tipicos=None, h_objetivo=None):
     `tipicos`: valor típico de cada sensor y parámetro (si es None se calcula con el
     periodo de entrenamiento y se devuelve para reutilizarlo). En operación se pasan los
     guardados al entrenar.
+    `pronostico`: lluvia pronosticada por tramos para cada hora (calidad_agua.clima.ventanas),
+    indexada como `h`. Si es None, esas columnas no se agregan.
     """
     S = [c[4:] for c in h.columns if c.startswith("CL2_")]
     entr = h["particion"] == "entrenamiento"
@@ -68,12 +73,11 @@ def tabla(h, horizonte=24, tipicos=None, h_objetivo=None):
     comun["caudal_media24h"] = h["Q_R1"].rolling(24, min_periods=12).mean()
     for k in [6, 24, 72]:
         comun[f"lluvia_{k}h"] = h["lluvia_mm"].rolling(k, min_periods=1).sum()
+    if pronostico is not None:
+        comun = comun.join(pronostico.reindex(h.index))
     hora_obj = (h.index + pd.Timedelta(hours=horizonte)).hour
     comun["hora_sin"] = np.sin(2 * np.pi * hora_obj / 24)
     comun["hora_cos"] = np.cos(2 * np.pi * hora_obj / 24)
-    dia = h.index.dayofyear
-    comun["anio_sin"] = np.sin(2 * np.pi * dia / 365.25)
-    comun["anio_cos"] = np.cos(2 * np.pi * dia / 365.25)
 
     partes = []
     for i, n in enumerate(S):

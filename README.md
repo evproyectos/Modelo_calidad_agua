@@ -60,7 +60,8 @@ Los datos no se versionan en este repositorio.
 
 ```
 calidad_agua/ paquete de Python con el código compartido: carga, limpieza, variables,
-              modelos (árboles, LSTM, detector), meta y figuras
+              pronóstico de lluvia, modelos (árboles, LSTM, detector), meta y figuras
+clima/        pronósticos de lluvia pasados de Open-Meteo para la zona (se versionan)
 notebooks/    EDA y modelos, numerados en el orden de lectura
 pruebas/      pruebas del paquete
 figuras/      figuras exportadas para el informe
@@ -96,6 +97,14 @@ sin etiquetas (como en operación) son idénticas a las usadas al entrenar:
 python pruebas/prueba_variables_en_vivo.py
 ```
 
+## Pronóstico de lluvia
+
+El pronóstico a 24 h usa la lluvia pronosticada para las próximas 24 h: el promedio de cuatro
+modelos meteorológicos globales (ECMWF IFS, GFS, ICON y GEM) de Open-Meteo. Para entrenar se usan
+los pronósticos **tal como estaban 24 h antes** de cada hora (Previous Runs API), guardados en
+`clima/pronostico_lluvia_modelos.csv`; el enlace de descarga está en `calidad_agua/clima.py`. En
+operación se usa el pronóstico vigente de los mismos cuatro modelos.
+
 ## Notebooks
 
 | # | Notebook | Contenido |
@@ -103,8 +112,8 @@ python pruebas/prueba_variables_en_vivo.py
 | 01 | calidad_de_datos | Faltantes, cortes de comunicación, fallas de sensor |
 | 02 | distribuciones | Rangos por parámetro y sensor, comparación con la norma |
 | 03 | temporal | Ciclos diarios y semanales, estacionalidad, autocorrelación |
-| 04 | clima | Lluvia de la zona (IMN, estación ITCR San Carlos), su efecto en turbidez, cloro, pH y temperatura, y cuánto aportaría un pronóstico de lluvia |
+| 04 | clima | Lluvia de la zona (IMN, estación ITCR San Carlos), su efecto en turbidez, cloro, pH y temperatura, cuánto aportaría un pronóstico de lluvia y qué pronóstico usar |
 | 05 | eventos | Cómo se ven los eventos y las fallas en los datos |
-| 06 | modelo_pronostico | Modelo de pronóstico a 24 h y evaluación contra la meta |
+| 06 | modelo_pronostico | Modelo de pronóstico a 24 h (árboles), qué información de clima usar y evaluación contra la meta |
 | 07 | detector_eventos | Detector de eventos: alarmas, tipo de evento y falsas alarmas |
 | 08 | red_neuronal | Red LSTM (TensorFlow/Keras), comparación con los árboles y modelo final de pronóstico |

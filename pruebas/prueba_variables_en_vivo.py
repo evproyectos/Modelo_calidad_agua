@@ -9,13 +9,14 @@ idéntica a la fila de la tabla completa usada al entrenar.
 Uso (desde la raíz del proyecto):  python pruebas/prueba_variables_en_vivo.py
 """
 import numpy as np, pandas as pd
-from calidad_agua import carga, calidad, variables, detector, red_neuronal as rn
+from calidad_agua import carga, calidad, variables, detector, clima, red_neuronal as rn
 
 crudo = carga.cargar_todo()
 # tabla completa (como en los notebooks)
 t15 = calidad.lecturas_operativas(crudo)
 h = variables.horario(t15)
-T, tip = variables.tabla(h)
+serie_pron = clima.cargar_pronostico()       # en operación: el pronóstico vigente de Open-Meteo
+T, tip = variables.tabla(h, pronostico=clima.ventanas(serie_pron, h.index))
 hd = detector.horario(t15)
 TD, tipd = detector.tabla(hd)
 datos = rn.preparar(h, tip)
@@ -31,7 +32,7 @@ for hora in horas:
     w15 = calidad.lecturas_operativas(ventana)
 
     hv = variables.horario(w15)
-    Tv, _ = variables.tabla(hv, tipicos=tip)
+    Tv, _ = variables.tabla(hv, tipicos=tip, pronostico=clima.ventanas(serie_pron, hv.index))
     a = Tv[Tv.fecha == hora].set_index("nodo")[X].astype(float)
     b = T[T.fecha == hora].set_index("nodo")[X].astype(float)
     ok = np.isclose(a.values, b.loc[a.index].values, equal_nan=True, rtol=1e-6, atol=1e-9)

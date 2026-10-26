@@ -7,8 +7,10 @@ logarítmica), pero en vez de resúmenes calculados a mano la red recibe la SECU
 
 Entrada de cada ejemplo (un sensor en la hora t):
   - secuencia (VENTANA_H × variables): cloro, turbidez, pH, temperatura y presión del sensor,
-    los mismos de la fuente (J280), la mediana de la red, lluvia, caudal, hora del día y época
-    del año, más una marca de "dato faltante" por parámetro del sensor;
+    los mismos de la fuente (J280), la mediana de la red, lluvia, caudal, hora del día (y época
+    del año, opcional), más una marca de "dato faltante" por parámetro del sensor. Si se pasa
+    `pronostico`, en cada hora también la lluvia pronosticada para las 24 h siguientes por
+    tramos (calidad_agua.clima): en la última hora de la ventana es el pronóstico vigente;
   - estáticas: el sensor (embedding) y su valor típico de cloro, turbidez y pH.
 Salida: los tres cambios a 24 h a la vez (un solo modelo para los tres parámetros).
 
@@ -37,7 +39,7 @@ def _log(x):
     return np.log(np.clip(x, PISO_LOG, None))
 
 
-def preparar(h, tipicos, normalizacion=None, h_objetivo=None):
+def preparar(h, tipicos, normalizacion=None, h_objetivo=None, pronostico=None, epoca=False):
     """
     Arreglos por sensor listos para la red. `h` es la tabla horaria de calidad_agua.variables.horario y
     `tipicos` el diccionario de calidad_agua.variables.tabla. Devuelve un diccionario con todo lo necesario.
@@ -45,16 +47,25 @@ def preparar(h, tipicos, normalizacion=None, h_objetivo=None):
     `normalizacion`: medias y desviaciones guardadas al entrenar. Si es None se
     calculan con el periodo de entrenamiento de `h`. En operación SIEMPRE se pasan las guardadas.
     `h_objetivo`: de dónde salen los objetivos (valor real, limpio de fallas); si es None, `h`.
+    `pronostico`: lluvia pronosticada por tramos (calidad_agua.clima.ventanas), indexada como `h`.
+    `epoca`: incluir la época del año (seno y coseno del día del año). Por defecto no: con 16 meses
+    de entrenamiento la red aprende cómo fue ese año en particular (notebook 06).
+    Las opciones tienen que ser las mismas al entrenar y en operación.
     """
     S = [c[4:] for c in h.columns if c.startswith("CL2_")]
     entr = (h["particion"] == "entrenamiento").values
     hora = h.index.hour
     dia = h.index.dayofyear
-    comunes = {
-        "hora_sin": np.sin(2 * np.pi * hora / 24), "hora_cos": np.cos(2 * np.pi * hora / 24),
-        "anio_sin": np.sin(2 * np.pi * dia / 365.25), "anio_cos": np.cos(2 * np.pi * dia / 365.25),
-        "lluvia": np.log1p(h["lluvia_mm"].fillna(0).values), "caudal": h["Q_R1"].values,
-    }
+    comunes = {"hora_sin": np.sin(2 * np.pi * hora / 24), "hora_cos": np.cos(2 * np.pi * hora / 24)}
+    if epoca:
+        comunes["anio_sin"] = np.sin(2 * np.pi * dia / 365.25)
+        comunes["anio_cos"] = np.cos(2 * np.pi * dia / 365.25)
+    comunes["lluvia"] = np.log1p(h["lluvia_mm"].fillna(0).values)
+    comunes["caudal"] = h["Q_R1"].values
+    if pronostico is not None:
+        pr = pronostico.reindex(h.index)
+        for c in pr.columns:
+            comunes[c] = np.log1p(pr[c].values)
     for p in ["CL2", "TURB", "PH", "TEMP"]:
         f = h[f"{p}_{FUENTE}"].values
         comunes[f"fuente_{p}"] = _log(f) if p == "TURB" else f

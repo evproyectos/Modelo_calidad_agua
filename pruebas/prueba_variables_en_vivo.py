@@ -23,7 +23,8 @@ X, XD = variables.columnas_entrada(T), detector.columnas_entrada(TD)
 
 solo_sensores = [c for c in crudo.columns if not c.startswith(("evento_", "falla_")) and c != "particion"]
 diferencias = {"pronóstico": 0, "detector": 0, "LSTM": 0}
-horas = pd.date_range("2026-09-10 07:00", periods=6, freq="17h")
+# unas horas al azar del periodo de prueba (a partir del día 10, para tener 7 días de historia)
+horas = pd.date_range(carga.periodos()["prueba"][0] + pd.Timedelta(days=9, hours=7), periods=6, freq="17h")
 for hora in horas:
     fin = hora + pd.Timedelta(minutes=45)                  # última lectura de esa hora
     ventana = crudo.loc[fin - pd.Timedelta(days=7) + pd.Timedelta(minutes=15): fin, solo_sensores]

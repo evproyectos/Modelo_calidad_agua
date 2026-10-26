@@ -82,6 +82,27 @@ def larga(t, parametros=("CL2", "TEMP", "TURB", "PH", "P")):
     return pd.concat(filas).reset_index()
 
 
+MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+
+
+def periodos():
+    """Inicio y fin [inicio, fin) de cada partición, tal como vienen en metadatos.json.
+
+    Las fechas no se escriben a mano en los notebooks: así, si el dataset cambia de periodo,
+    basta con volver a correrlos."""
+    m = metadatos()["particiones"]
+    return {p: (pd.Timestamp(m[p][0]), pd.Timestamp(m[p][1])) for p in PARTICIONES}
+
+
+def texto_periodo(particion):
+    """'sep 2024 – dic 2025', o 'may – ago 2026' si empieza y termina el mismo año."""
+    ini, fin = periodos()[particion]
+    ult = fin - pd.Timedelta(days=1)
+    if ini.year == ult.year:
+        return f"{MESES[ini.month - 1]} – {MESES[ult.month - 1]} {ult.year}"
+    return f"{MESES[ini.month - 1]} {ini.year} – {MESES[ult.month - 1]} {ult.year}"
+
+
 def tabla_sensores():
     return pd.read_csv(carpeta_datos() / "sensores.csv")
 

@@ -36,14 +36,17 @@ separado. La definición está en `calidad_agua/metas.py`.
 
 ## Datos
 
-Los datos van de enero de 2025 a diciembre de 2026, divididos en tres
+Los datos van de septiembre de 2024 a agosto de 2026, divididos en tres
 periodos consecutivos:
 
 | Partición | Periodo | Uso |
 |---|---|---|
-| entrenamiento | ene 2025 – abr 2026 | ajustar los modelos |
-| validación | may – ago 2026 | elegir hiperparámetros y umbrales |
-| prueba | sep – dic 2026 | evaluación final |
+| entrenamiento | sep 2024 – dic 2025 | ajustar los modelos |
+| validación | ene – abr 2026 (época seca) | elegir hiperparámetros y umbrales |
+| prueba | may – ago 2026 (entrada de la época lluviosa) | evaluación final |
+
+Las fechas de cada periodo vienen en `metadatos.json` junto con los datos y el código
+las lee de ahí (`carga.periodos()`); no están escritas a mano en los notebooks.
 
 Los datos no se versionan en este repositorio.
 

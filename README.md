@@ -30,9 +30,15 @@ del valor observado (promedio horario):
 
 La meta es que el modelo acierte **al menos el 80 %** de los pronósticos en cada
 uno de los tres parámetros, en operación normal, **y que supere al pronóstico
-ingenuo** "igual que ayer a la misma hora", que logra 75 % en cloro, 52 % en
-turbidez y 80 % en pH (notebook 03). El acierto durante eventos se reporta por
-separado. La definición está en `calidad_agua/metas.py`.
+ingenuo** "igual que ayer a la misma hora" en el mismo periodo (notebook 03):
+
+| Periodo | Cloro | Turbidez | pH |
+|---|---|---|---|
+| validación (ene–abr 2026, época más seca) | 81 % | 62 % | 84 % |
+| prueba (may–ago 2026, época lluviosa) | 79 % | 43 % | 78 % |
+
+El acierto durante eventos se reporta por separado. La definición está en
+`calidad_agua/metas.py`.
 
 ## Datos
 

@@ -184,7 +184,13 @@ def construir(n_variables, n_sensores, unidades=48, abandono=0.1, l2=0.0):
 
 def pronosticar(mod, datos, idx, tamano=2048):
     """Pronóstico (en unidades originales) de los tres parámetros para cada par (sensor, hora)."""
-    cambio = mod.predict(Lotes(datos, idx, tamano), verbose=0) * datos["desv_y"]
+    if len(idx) <= tamano:
+        # un solo lote (en vivo, unas pocas horas): predict_on_batch da lo mismo que predict() y se
+        # salta su preparación, que con pocas filas es casi todo el tiempo (3 ms en vez de 70 ms)
+        (x, _y) = Lotes(datos, idx, len(idx))[0]
+        cambio = mod.predict_on_batch(x) * datos["desv_y"]
+    else:
+        cambio = mod.predict(Lotes(datos, idx, tamano), verbose=0) * datos["desv_y"]
     base = np.stack([datos["base"][i][t] for i, t in idx])
     pron = base + cambio
     pron[:, SALIDAS.index("TURB")] = np.exp(pron[:, SALIDAS.index("TURB")])

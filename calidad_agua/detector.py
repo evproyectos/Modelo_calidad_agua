@@ -65,7 +65,7 @@ def tabla(h, tip=None):
                          index=h.index) for p in PARAMS}
     fuera = {p: (D[p].abs() > UMBRAL_DESVIO[p]) for p in PARAMS}
 
-    comun = pd.DataFrame(index=h.index)
+    comun = {}                     # columnas en un diccionario y la tabla de una vez (más rápido)
     for p in PARAMS:
         comun[f"red_sensores_desviados_{p}"] = fuera[p].sum(axis=1)
         comun[f"red_desvio_mediano_{p}"] = D[p].median(axis=1)
@@ -76,22 +76,34 @@ def tabla(h, tip=None):
     comun["lluvia_24h"] = h["lluvia_mm_h"].rolling(24, min_periods=1).sum()
     comun["hora_sin"] = np.sin(2 * np.pi * hora / 24)
     comun["hora_cos"] = np.cos(2 * np.pi * hora / 24)
+    comun = pd.DataFrame(comun, index=h.index)
+
+    # ventanas móviles de todos los sensores a la vez (tabla hora × sensor por parámetro): da lo
+    # mismo que calcularlas sensor por sensor y es varias veces más rápido
+    V = {}
+    for p in PARAMS:
+        X = D[p]
+        V[p] = {"media3h": X.rolling(3, min_periods=1).mean(),
+                "media12h": X.rolling(12, min_periods=3).mean(),
+                "cambio1h": X.diff(), "cambio3h": X - X.shift(3),
+                "desv6h": h[[f"{p}_{n}" for n in S]].set_axis(S, axis=1).rolling(6, min_periods=3).std(),
+                "vs_red": X.sub(X.median(axis=1), axis=0)}
 
     partes = []
     for i, n in enumerate(S):
-        d = comun.copy()
+        d = {}
         d["sensor"] = i
         d["CL2_tipico"] = float(tip["CL2", n].median())
         desviados = 0
         for p in PARAMS:
-            x = D[p][n]
-            d[f"desvio_{p}"] = x
-            d[f"desvio_{p}_media3h"] = x.rolling(3, min_periods=1).mean()
-            d[f"desvio_{p}_media12h"] = x.rolling(12, min_periods=3).mean()
-            d[f"cambio_{p}_1h"] = x.diff()
-            d[f"cambio_{p}_3h"] = x - x.shift(3)
-            d[f"desv_{p}_6h"] = h[f"{p}_{n}"].rolling(6, min_periods=3).std()
-            d[f"desvio_{p}_vs_red"] = x - D[p].median(axis=1)
+            v = V[p]
+            d[f"desvio_{p}"] = D[p][n]
+            d[f"desvio_{p}_media3h"] = v["media3h"][n]
+            d[f"desvio_{p}_media12h"] = v["media12h"][n]
+            d[f"cambio_{p}_1h"] = v["cambio1h"][n]
+            d[f"cambio_{p}_3h"] = v["cambio3h"][n]
+            d[f"desv_{p}_6h"] = v["desv6h"][n]
+            d[f"desvio_{p}_vs_red"] = v["vs_red"][n]
             desviados = desviados + fuera[p][n].astype(int)
         d["parametros_desviados"] = desviados
         d["lecturas_hora"] = h[f"lecturas_{n}"]
@@ -100,7 +112,7 @@ def tabla(h, tip=None):
         d["clase"] = h[f"evento_{n}"].fillna(0).astype(int)
         d["particion"] = h["particion"]
         d["nodo"] = n
-        partes.append(d)
+        partes.append(pd.concat([comun, pd.DataFrame(d, index=h.index)], axis=1))
     return pd.concat(partes).rename_axis("fecha").reset_index(), tip
 
 

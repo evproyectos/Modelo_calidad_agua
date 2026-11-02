@@ -60,8 +60,10 @@ def tabla(h, horizonte=24, tipicos=None, h_objetivo=None, pronostico=None):
         tipicos = {(p, n): float(h.loc[entr & (h[f"evento_{n}"] == 0), f"{p}_{n}"].median())
                    for n in S for p in PARAMS}
 
-    # variables comunes a todos los sensores (fuente, red, clima, calendario)
-    comun = pd.DataFrame(index=h.index)
+    # variables comunes a todos los sensores (fuente, red, clima, calendario). Las columnas se
+    # juntan en un diccionario y se arma la tabla de una vez: agregarlas una por una al DataFrame
+    # es mucho más lento (importa en la predicción en vivo) y da exactamente lo mismo.
+    comun = {}
     for p in PARAMS:
         f = h[f"{p}_{FUENTE}"]
         comun[f"fuente_{p}"] = f
@@ -73,28 +75,42 @@ def tabla(h, horizonte=24, tipicos=None, h_objetivo=None, pronostico=None):
     comun["caudal_media24h"] = h["Q_R1"].rolling(24, min_periods=12).mean()
     for k in [6, 24, 72]:
         comun[f"lluvia_{k}h"] = h["lluvia_mm"].rolling(k, min_periods=1).sum()
+    comun = pd.DataFrame(comun, index=h.index)
     if pronostico is not None:
         comun = comun.join(pronostico.reindex(h.index))
     hora_obj = (h.index + pd.Timedelta(hours=horizonte)).hour
     comun["hora_sin"] = np.sin(2 * np.pi * hora_obj / 24)
     comun["hora_cos"] = np.cos(2 * np.pi * hora_obj / 24)
 
+    # desfases y ventanas móviles de todos los sensores a la vez (tabla hora × sensor por
+    # parámetro): da lo mismo que calcularlas sensor por sensor y es varias veces más rápido
+    V = {}
+    for p in PARAMS:
+        X = h[[f"{p}_{n}" for n in S]].set_axis(S, axis=1)
+        V[p] = {"hace24h": X.shift(24), "hace23h": X.shift(23),
+                "vs_fuente": X.sub(h[f"{p}_{FUENTE}"], axis=0)}
+        for k in [1, 3, 6]:
+            V[p][f"cambio{k}h"] = X - X.shift(k)
+        for k in [6, 24]:
+            V[p][f"media{k}h"] = X.rolling(k, min_periods=k // 2).mean()
+            V[p][f"desv{k}h"] = X.rolling(k, min_periods=k // 2).std()
+
     partes = []
     for i, n in enumerate(S):
-        d = comun.copy()
+        d = {}
         d["sensor"] = i
         for p in PARAMS:
-            x = h[f"{p}_{n}"]
-            d[f"{p}"] = x
+            v = V[p]
+            d[f"{p}"] = h[f"{p}_{n}"]
             d[f"{p}_tipico"] = tipicos[(p, n)]
-            d[f"{p}_hace24h"] = x.shift(24)
-            d[f"{p}_hace23h"] = x.shift(23)
+            d[f"{p}_hace24h"] = v["hace24h"][n]
+            d[f"{p}_hace23h"] = v["hace23h"][n]
             for k in [1, 3, 6]:
-                d[f"{p}_cambio{k}h"] = x - x.shift(k)
+                d[f"{p}_cambio{k}h"] = v[f"cambio{k}h"][n]
             for k in [6, 24]:
-                d[f"{p}_media{k}h"] = x.rolling(k, min_periods=k // 2).mean()
-                d[f"{p}_desv{k}h"] = x.rolling(k, min_periods=k // 2).std()
-            d[f"{p}_vs_fuente"] = x - h[f"{p}_{FUENTE}"]
+                d[f"{p}_media{k}h"] = v[f"media{k}h"][n]
+                d[f"{p}_desv{k}h"] = v[f"desv{k}h"][n]
+            d[f"{p}_vs_fuente"] = v["vs_fuente"][n]
             # objetivo: valor en t + horizonte
             d[f"objetivo_{p}"] = (h if h_objetivo is None else h_objetivo)[f"{p}_{n}"].shift(-horizonte)
         d["P"] = h[f"P_{n}"]
@@ -102,7 +118,7 @@ def tabla(h, horizonte=24, tipicos=None, h_objetivo=None, pronostico=None):
         d["evento_objetivo"] = h[f"evento_{n}"].shift(-horizonte)
         d["particion"] = h["particion"]
         d["nodo"] = n
-        partes.append(d)
+        partes.append(pd.concat([comun, pd.DataFrame(d, index=h.index)], axis=1))
     return pd.concat(partes).rename_axis("fecha").reset_index(), tipicos
 
 

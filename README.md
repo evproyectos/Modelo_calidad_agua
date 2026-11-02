@@ -143,8 +143,10 @@ Los registros quedan en el proyecto, en `mlflow.db` y `mlartifacts/`, que no se 
 verlos, desde la raíz del proyecto y con el venv activado:
 
 ```
-mlflow ui --backend-store-uri sqlite:///mlflow.db
+mlflow ui --backend-store-uri sqlite:///mlflow.db --workers 1
 ```
+
+(`--workers 1` hace falta en Windows: con varios procesos el servidor no arranca.)
 
 y abrir **http://127.0.0.1:5000**. Experimentos: `pronostico_24h` (notebooks 06 y 08) y
 `detector_eventos` (notebook 07).

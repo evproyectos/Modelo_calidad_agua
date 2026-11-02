@@ -17,7 +17,9 @@ Los registros quedan en el propio proyecto, en mlflow.db (la base) y mlartifacts
 una carpeta por experimento); no se versionan en git. No se envía telemetría de uso de MLflow.
 Para verlos, desde la raíz del proyecto:
 
-    mlflow ui --backend-store-uri sqlite:///mlflow.db        → http://127.0.0.1:5000
+    mlflow ui --backend-store-uri sqlite:///mlflow.db --workers 1    → http://127.0.0.1:5000
+
+(`--workers 1` hace falta en Windows: con varios procesos el servidor no arranca.)
 
 Con la variable de entorno MLFLOW_TRACKING_URI se puede usar otro servidor de MLflow.
 """

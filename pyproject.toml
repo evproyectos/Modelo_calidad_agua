@@ -20,6 +20,21 @@ dependencies = [
 red = ["tensorflow>=2.16"]
 # para correr los notebooks de este proyecto
 notebooks = ["matplotlib>=3.8", "seaborn>=0.13", "statsmodels>=0.14", "jupyter", "ipykernel"]
+# pruebas unitarias, cobertura y estilo (lo mismo que corre el CI)
+dev = ["pytest>=8", "pytest-cov>=5", "flake8>=7"]
 
 [tool.setuptools]
 packages = ["calidad_agua"]
+
+[tool.pytest.ini_options]
+testpaths = ["pruebas"]
+
+# Cobertura de los módulos de preprocesamiento y variables (RNF-007: mínimo 70 %). Quedan fuera
+# los que entrenan o grafican: red_neuronal (necesita TensorFlow), modelo y graficos.
+[tool.coverage.run]
+source = ["calidad_agua"]
+omit = ["calidad_agua/red_neuronal.py", "calidad_agua/modelo.py", "calidad_agua/graficos.py"]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true

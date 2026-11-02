@@ -1,0 +1,40 @@
+# Integración continua (RNF-007 y RNF-004): en cada push y en cada pull request revisa el estilo,
+# corre las pruebas unitarias con cobertura mínima de 70 % y busca secretos en el historial.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pruebas:
+    name: Estilo, pruebas y cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Instalar
+        run: pip install -e ".[dev]"
+      - name: Estilo (flake8)
+        run: flake8
+      - name: Pruebas unitarias y cobertura (mínimo 70 %)
+        run: pytest --cov --cov-report=term-missing --cov-fail-under=70
+      - name: Resumen de cobertura
+        if: always()
+        run: |
+          echo "## Cobertura" >> "$GITHUB_STEP_SUMMARY"
+          coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
+
+  secretos:
+    name: Búsqueda de secretos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

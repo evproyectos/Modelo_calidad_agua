@@ -63,7 +63,8 @@ calidad_agua/ paquete de Python con el código compartido: carga, limpieza, vari
               pronóstico de lluvia, modelos (árboles, LSTM, detector), meta y figuras
 clima/        pronósticos de lluvia pasados de Open-Meteo para la zona (se versionan)
 notebooks/    EDA y modelos, numerados en el orden de lectura
-pruebas/      pruebas del paquete
+pruebas/      pruebas unitarias (test_*.py) y la prueba de variables en vivo
+.github/      integración continua en GitHub (estilo, pruebas, cobertura y secretos)
 figuras/      figuras exportadas para el informe
 modelos/      modelos entrenados (se generan con los notebooks 06, 07 y 08; no se versionan)
 ```
@@ -87,6 +88,23 @@ Para usarlo desde otro proyecto, en el entorno de ese proyecto:
 ```
 pip install -e "D:\Practica_Profesional\Modelo_calidad_agua[red]"
 ```
+
+### Pruebas unitarias, cobertura y estilo
+
+Las pruebas usan una red sintética pequeña creada en la propia prueba: no necesitan los datos
+ni TensorFlow y corren en segundos. Cubren la carga, la limpieza (`calidad`), el pronóstico
+de lluvia (`clima`), las variables del pronóstico (`variables`), el detector (`detector`), los
+episodios y la meta. La cobertura de esos módulos debe ser de al menos 70 % (RNF-007);
+`red_neuronal`, `modelo` y `graficos` quedan fuera de la medición.
+
+```
+pip install -e ".[dev]"
+pytest --cov                 # pruebas y cobertura por módulo
+flake8                       # estilo PEP 8 (líneas de hasta 120 caracteres)
+```
+
+En GitHub, el CI (`.github/workflows/ci.yml`) corre lo mismo en cada push y en cada pull
+request, falla si la cobertura baja de 70 % y además busca secretos en el historial (gitleaks).
 
 ### Prueba de variables en vivo
 

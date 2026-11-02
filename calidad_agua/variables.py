@@ -21,7 +21,7 @@ Variables (por lo encontrado en el EDA):
 import numpy as np
 import pandas as pd
 
-from . import carga, calidad
+from . import carga
 
 FUENTE = "J280"
 PARAMS = ["CL2", "TURB", "PH", "TEMP"]

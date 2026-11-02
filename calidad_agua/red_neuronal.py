@@ -20,12 +20,12 @@ ignora los objetivos faltantes.
 
 import os
 import numpy as np
-import pandas as pd
 
+# antes de importar TensorFlow, para que no llene la consola de avisos
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
-import keras
-from keras import layers
-import tensorflow as tf
+import keras  # noqa: E402
+from keras import layers  # noqa: E402
+import tensorflow as tf  # noqa: E402
 
 
 FUENTE = "J280"

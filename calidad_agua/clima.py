@@ -30,7 +30,6 @@ es un pronóstico algo más viejo que el que habría en operación: el resultado
 import os
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -70,6 +69,7 @@ def ventanas(lluvia_pron, horas):
     horas = pd.DatetimeIndex(horas)
     s = lluvia_pron.astype("float64").reindex(
         pd.date_range(horas.min(), horas.max() + pd.Timedelta(hours=TRAMOS[-1][1]), freq="1h"))
+
     def suma(a, b):          # lluvia de las horas válidas t+a+1 … t+b (NaN si falta alguna)
         return s.rolling(b - a, min_periods=b - a).sum().reindex(horas + pd.Timedelta(hours=b)).values
     return pd.DataFrame({c: suma(a, b) for c, (a, b) in zip(COLUMNAS, TRAMOS)}, index=horas).astype("float32")

@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 
 RAIZ = Path(__file__).resolve().parents[1]
 FIGURAS = RAIZ / "figuras"

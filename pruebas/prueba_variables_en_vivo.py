@@ -8,7 +8,8 @@ idéntica a la fila de la tabla completa usada al entrenar.
 
 Uso (desde la raíz del proyecto):  python pruebas/prueba_variables_en_vivo.py
 """
-import numpy as np, pandas as pd
+import numpy as np
+import pandas as pd
 from calidad_agua import carga, calidad, variables, detector, clima, red_neuronal as rn
 
 crudo = carga.cargar_todo()

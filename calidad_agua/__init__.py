@@ -5,6 +5,8 @@ Módulos:
   carga         lectura del dataset de los sensores
   calidad       limpieza de lecturas (con etiquetas de falla y solo con reglas de operación)
   metas         meta del proyecto: tolerancias y criterio de acierto
+  configuracion hiperparámetros de los modelos (hiperparametros.yaml)
+  experimentos  registro de los experimentos en MLflow
   variables     variables de entrada del pronóstico a 24 h
   modelo        pronóstico con árboles (scikit-learn)
   red_neuronal  pronóstico con LSTM (TensorFlow/Keras)

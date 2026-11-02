@@ -17,6 +17,11 @@ datos/
 # modelos entrenados: se regeneran corriendo los notebooks 06, 07 y 08
 modelos/
 
+# registros de MLflow (base y archivos de cada experimento)
+mlflow.db
+mlartifacts/
+mlruns/
+
 .vscode/
 
 # reportes de cobertura de pytest-cov

@@ -20,16 +20,14 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from . import carga
+from . import carga, configuracion
 from .eventos import episodios
 
 PARAMS = ["CL2", "TURB", "PH", "TEMP"]
 UMBRAL_DESVIO = {"CL2": 0.1, "TURB": 0.5, "PH": 0.2, "TEMP": 1.0}
 FUENTE = "J280"
 
-HIPERPARAMETROS = dict(max_iter=300, learning_rate=0.05, max_leaf_nodes=31, min_samples_leaf=40,
-                       l2_regularization=1.0, class_weight="balanced", early_stopping=True,
-                       validation_fraction=0.1, random_state=0)
+HIPERPARAMETROS = configuracion.seccion("detector")                # hiperparametros.yaml
 
 
 def horario(t15):

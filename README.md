@@ -60,7 +60,8 @@ Los datos no se versionan en este repositorio.
 
 ```
 calidad_agua/ paquete de Python con el código compartido: carga, limpieza, variables,
-              pronóstico de lluvia, modelos (árboles, LSTM, detector), meta y figuras
+              pronóstico de lluvia, modelos (árboles, LSTM, detector), meta, figuras y
+              registro de experimentos; hiperparametros.yaml tiene los hiperparámetros
 clima/        pronósticos de lluvia pasados de Open-Meteo para la zona (se versionan)
 notebooks/    EDA y modelos, numerados en el orden de lectura
 pruebas/      pruebas unitarias (test_*.py) y la prueba de variables en vivo
@@ -114,6 +115,39 @@ sin etiquetas (como en operación) son idénticas a las usadas al entrenar:
 ```
 python pruebas/prueba_variables_en_vivo.py
 ```
+
+## Hiperparámetros y experimentos (MLflow)
+
+Los hiperparámetros de los tres modelos (árboles del pronóstico, detector y LSTM) y la grilla con
+que se elige el umbral del detector están en **`calidad_agua/hiperparametros.yaml`**, la única
+fuente: el código y los notebooks los leen de ahí. Si se cambia algo, hay que volver a correr los
+notebooks 06, 07 y 08 y copiar los modelos nuevos al servicio.
+
+Cada corrida de los notebooks 06, 07 y 08 queda registrada en **MLflow** (`calidad_agua/experimentos.py`):
+
+- **parámetros:** los del YAML, los periodos de cada partición y las decisiones de la corrida
+  (umbral y confirmación elegidos, modelo elegido por parámetro);
+- **métricas:** acierto en validación y en prueba por parámetro, curvas de aprendizaje de la LSTM,
+  eventos detectados, falsas alarmas y métricas de clasificación del detector (precisión,
+  sensibilidad, F1 y AUC-ROC);
+- **trazabilidad:** huella SHA-256 de los datos (cada partición, `metadatos.json` y el pronóstico
+  de lluvia, más una huella combinada), commit de git y si había cambios sin guardar, fecha,
+  máquina y versiones de las librerías;
+- **archivos:** los modelos guardados, las figuras y las tablas de resultados (CSV).
+
+Las variantes que se comparan dentro de un notebook (versiones de clima en el 06, combinaciones de
+umbral y confirmación en el 07) quedan como corridas hijas, para compararlas en la interfaz.
+Cada modelo guardado lleva el id de su corrida, y el servicio lo muestra en `/health`.
+
+Los registros quedan en el proyecto, en `mlflow.db` y `mlartifacts/`, que no se versionan. Para
+verlos, desde la raíz del proyecto y con el venv activado:
+
+```
+mlflow ui --backend-store-uri sqlite:///mlflow.db
+```
+
+y abrir **http://127.0.0.1:5000**. Experimentos: `pronostico_24h` (notebooks 06 y 08) y
+`detector_eventos` (notebook 07).
 
 ## Pronóstico de lluvia
 

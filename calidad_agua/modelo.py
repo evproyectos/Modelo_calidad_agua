@@ -14,12 +14,12 @@ que aprender lo que la línea base no explica.
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingRegressor
 
+from . import configuracion
+
 LOG = {"TURB"}
 PISO_LOG = 0.05            # UNT, para no tomar logaritmo de cero
 
-HIPERPARAMETROS = dict(loss="absolute_error", max_iter=400, learning_rate=0.05, max_leaf_nodes=31,
-                       min_samples_leaf=50, l2_regularization=1.0, early_stopping=True,
-                       validation_fraction=0.1, random_state=0)
+HIPERPARAMETROS = configuracion.seccion("pronostico_arboles")      # hiperparametros.yaml
 
 
 def _a_escala(p, x):

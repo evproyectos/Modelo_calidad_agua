@@ -1,0 +1,42 @@
+# Hiperparámetros de los modelos (RF-002.4).
+#
+# Es la única fuente: modelo.py, detector.py y los notebooks 06, 07 y 08 los leen de aquí, y
+# cada experimento los registra en MLflow. Si se cambia algo, hay que volver a correr los
+# notebooks 06, 07 y 08 (y copiar los modelos nuevos al servicio).
+
+pronostico_arboles:            # modelo.py · HistGradientBoostingRegressor, uno por parámetro
+  loss: absolute_error         # error absoluto: más robusto a los eventos
+  max_iter: 400                # máximo de árboles (se detiene antes si deja de mejorar)
+  learning_rate: 0.05
+  max_leaf_nodes: 31
+  min_samples_leaf: 50
+  l2_regularization: 1.0
+  early_stopping: true
+  validation_fraction: 0.1     # parte del entrenamiento que se aparta para la parada temprana
+  random_state: 0
+
+detector:                      # detector.py · HistGradientBoostingClassifier
+  max_iter: 300
+  learning_rate: 0.05
+  max_leaf_nodes: 31
+  min_samples_leaf: 40
+  l2_regularization: 1.0
+  class_weight: balanced       # los eventos son pocos frente a las horas normales
+  early_stopping: true
+  validation_fraction: 0.1
+  random_state: 0
+
+eleccion_alarma:               # notebook 07 · umbral y confirmación, con validación por bloques
+  umbrales: [0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
+  confirmaciones_h: [1, 2, 3]
+  max_falsas_por_semana: 1.0   # en el peor bloque
+
+lstm:                          # notebook 08 · red_neuronal.construir y entrenamiento
+  unidades: 48                 # tamaño de la capa LSTM
+  abandono: 0.1                # dropout
+  l2: 0.0
+  tasa_aprendizaje: 0.0003
+  epocas: 8                    # máximo (parada temprana)
+  paciencia: 2                 # épocas sin mejorar antes de parar
+  lote: 512
+  semillas: [0, 1, 2]          # una red por semilla; el pronóstico es el promedio

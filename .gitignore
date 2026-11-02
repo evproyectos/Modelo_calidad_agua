@@ -18,3 +18,7 @@ datos/
 modelos/
 
 .vscode/
+
+# reportes de cobertura de pytest-cov
+.coverage
+htmlcov/

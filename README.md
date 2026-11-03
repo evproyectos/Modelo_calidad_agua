@@ -137,7 +137,7 @@ Cada corrida de los notebooks 06 a 09 queda registrada en **MLflow** (`calidad_a
 - **archivos:** los modelos guardados, las figuras y las tablas de resultados (CSV).
 
 Las variantes que se comparan dentro de un notebook (versiones de clima en el 06, combinaciones de
-umbral y confirmación en el 07, los cuatro modelos de anticipación en el 09) quedan como corridas hijas, para compararlas en la interfaz.
+umbral y confirmación y los otros modelos del detector en el 07, los cuatro modelos de anticipación en el 09) quedan como corridas hijas, para compararlas en la interfaz.
 Cada modelo guardado lleva el id de su corrida, y el servicio lo muestra en `/health`.
 
 Los registros quedan en el proyecto, en `mlflow.db` y `mlartifacts/`, que no se versionan. Para
@@ -177,6 +177,6 @@ python herramientas/correr_notebooks.py 06 07     # solo algunos
 | 04 | clima | Lluvia de la zona (IMN, estación ITCR San Carlos), su efecto en turbidez, cloro, pH y temperatura, cuánto aportaría un pronóstico de lluvia y qué pronóstico usar |
 | 05 | eventos | Cómo se ven los eventos y las fallas en los datos |
 | 06 | modelo_pronostico | Modelo de pronóstico a 24 h (árboles), qué información de clima usar y evaluación contra la meta |
-| 07 | detector_eventos | Detector de eventos: alarmas, tipo de evento y falsas alarmas |
+| 07 | detector_eventos | Detector de eventos: alarmas, tipo de evento y falsas alarmas; comparación con Random Forest e Isolation Forest |
 | 08 | red_neuronal | Red LSTM (TensorFlow/Keras), comparación con los árboles y modelo final de pronóstico |
 | 09 | anticipacion_eventos | Probabilidad de que empiece un evento en las próximas 24 h (lluvia, deterioro en la fuente, baja presión): árboles, bosque aleatorio, Isolation Forest y LSTM; anticipación y avisos falsos; llegada de los eventos de la fuente a cada sensor |

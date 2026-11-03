@@ -72,6 +72,76 @@ def test_entrenar_y_probabilidades(hd):
     assert p[evento].mean() > p[~evento].mean()
 
 
+def test_bosque_e_isolation_forest_para_comparar(hd):
+    tabla, _ = detector.tabla(hd)
+    cols = detector.columnas_entrada(tabla)
+    entr = (tabla["particion"] == "entrenamiento").values
+    evento = tabla["clase"].values == 1
+    rf = detector.entrenar_bosque(tabla, cols, entr)
+    p, tipo = detector.probabilidades(rf, tabla, cols)          # acepta las variables con vacíos
+    assert ((p >= 0) & (p <= 1)).all() and 0 not in set(tipo)
+    assert p[evento].mean() > p[~evento].mean()
+    iso = detector.entrenar_isolation(tabla, cols, entr)
+    p_iso, tipo_iso = detector.probabilidades(iso, tabla, cols)
+    assert ((p_iso >= 0) & (p_iso <= 1)).all() and set(tipo_iso) == {0}   # no dice el tipo
+    normal_entr = entr & (tabla["clase"].values == 0)
+    assert np.median(p_iso[normal_entr]) == pytest.approx(0, abs=0.02)    # 0 = lo típico
+    assert p_iso[evento].mean() > p_iso[normal_entr].mean()               # sin etiquetas, igual lo ve raro
+
+
+def test_isolation_forest_mejorado(hd):
+    tabla, _ = detector.tabla(hd)
+    cols = detector.columnas_entrada(tabla)
+    cols_a = detector.columnas_anomalia(cols)
+    assert "desvio_CL2" in cols_a and "parametros_desviados" in cols_a
+    assert not {"sensor", "CL2_tipico", "lluvia_6h", "hora_sin", "P", "cambio_P_1h", "lecturas_hora"} & set(cols_a)
+    entr = (tabla["particion"] == "entrenamiento").values
+    iso = detector.entrenar_isolation(tabla, cols, entr, desvios=True, por_sensor=True, sin_lluvia=True)
+    assert iso.columnas_ == cols_a and set(iso.rango_) == set(SENSORES) and set(iso.lluvia_) == set(SENSORES)
+    p, tipo = detector.probabilidades(iso, tabla, cols)
+    assert ((p >= 0) & (p <= 1)).all() and set(tipo) == {0}
+    normal_entr = entr & (tabla["clase"].values == 0)
+    for n in SENSORES:                                       # cada sensor calibrado con lo suyo
+        m = normal_entr & (tabla["nodo"].values == n)
+        assert np.median(p[m]) == pytest.approx(0, abs=0.02)
+    assert p[tabla["clase"].values == 1].mean() > p[normal_entr].mean()
+
+
+def test_lluvia_normal_no_cuenta_como_anomalia(hd):
+    """Si la turbidez sube con la lluvia, después de descontarla ya no se relaciona con ella."""
+    hd = hd.copy()
+    rng = np.random.default_rng(1)
+    hd["lluvia_mm_h"] = np.where(rng.random(len(hd)) < 0.15, rng.gamma(2, 3, len(hd)), 0.0)
+    for n in SENSORES:
+        hd[f"TURB_{n}"] = hd[f"TURB_{n}"] + 0.1 * hd["lluvia_mm_h"].rolling(6, min_periods=1).sum()
+    tabla, _ = detector.tabla(hd)
+    cols = detector.columnas_entrada(tabla)
+    entr = (tabla["particion"] == "entrenamiento").values
+    sin = detector.entrenar_isolation(tabla, cols, entr, desvios=True, sin_lluvia=True)
+    k = sin.columnas_.index("desvio_TURB")
+    m = entr & (tabla["nodo"].values == "J10") & tabla["desvio_TURB"].notna().values
+    lluvia = np.log1p(tabla.loc[m, "lluvia_6h"].values)
+    antes = np.corrcoef(lluvia, tabla.loc[m, "desvio_TURB"].values)[0, 1]
+    despues = np.corrcoef(lluvia, detector._ajustadas(sin, tabla[m])[:, k])[0, 1]
+    assert antes > 0.5 and abs(despues) < 0.15
+
+
+def test_operacion_limpia_quita_fallas_y_deterioro_previo():
+    t = red_sintetica(dias=10)
+    t.loc[t.index[100:140], "falla_CL2_J10"] = 2                      # deriva del sensor
+    t["precursor_red"] = 0
+    t.loc[t.index[400:440], "precursor_red"] = 2                      # deterioro previo
+    t.loc[t.index[600:624], "evento_J20"] = 1
+    hd = detector.horario(calidad.lecturas_operativas(t))
+    tabla, _ = detector.tabla(hd)
+    limpia = detector.operacion_limpia(tabla, t)
+    f = tabla.set_index(["fecha", "nodo"])
+    L = pd.Series(limpia, index=f.index)
+    assert not L.loc[(t.index[120].floor("h"), "J10")] and L.loc[(t.index[120].floor("h"), "J20")]
+    assert not L.loc[(t.index[420].floor("h"), "J280")]
+    assert not L.loc[(t.index[610].floor("h"), "J20")] and L.loc[(t.index[800].floor("h"), "J20")]
+
+
 def test_alarma_solo_con_horas_seguidas_sobre_el_umbral():
     fechas = pd.date_range("2025-03-01", periods=6, freq="1h")
     t = pd.DataFrame({"fecha": fechas, "nodo": "J10"})

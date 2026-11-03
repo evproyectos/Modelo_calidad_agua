@@ -18,7 +18,7 @@ Una alarma de red se enciende cuando algún sensor supera el umbral de probabili
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, IsolationForest, RandomForestClassifier
 
 from . import carga, configuracion
 from .eventos import episodios
@@ -28,6 +28,8 @@ UMBRAL_DESVIO = {"CL2": 0.1, "TURB": 0.5, "PH": 0.2, "TEMP": 1.0}
 FUENTE = "J280"
 
 HIPERPARAMETROS = configuracion.seccion("detector")                # hiperparametros.yaml
+COMPARACION = configuracion.seccion("detector_comparacion")       # otros modelos (notebook 07)
+VACIO = -999          # el bosque de scikit-learn no acepta vacíos en todas las versiones
 
 
 def horario(t15):
@@ -124,9 +126,104 @@ def entrenar(tabla_, columnas, filas):
     return mod
 
 
+def entrenar_bosque(tabla_, columnas, filas):
+    """Random Forest con las mismas variables y etiquetas que el detector (para compararlos)."""
+    mod = RandomForestClassifier(**COMPARACION["bosque"])
+    mod.fit(tabla_.loc[filas, columnas].fillna(VACIO), tabla_.loc[filas, "clase"])
+    return mod
+
+
+# variables que miden "qué tan raro está esto" (para el Isolation Forest mejorado): desvíos de lo
+# típico y cambios recientes; sin el sensor, la hora, la lluvia, la presión ni el cloro típico
+PREFIJOS_ANOMALIA = ("desvio_", "cambio_CL2", "cambio_TURB", "cambio_PH", "cambio_TEMP", "desv_",
+                     "red_sensores_desviados_", "red_desvio_mediano_", "fuente_desvio_", "parametros_desviados")
+LLUVIA = ["lluvia_6h", "lluvia_24h"]
+
+
+def columnas_anomalia(columnas):
+    return [c for c in columnas if c.startswith(PREFIJOS_ANOMALIA)]
+
+
+def operacion_limpia(tabla_, crudo):
+    """
+    True en las filas (sensor × hora) de operación normal de verdad: sin evento, sin falla del
+    sensor (columnas falla_*) y sin el deterioro previo a una falla (precursor_red).
+    """
+    S = sorted(tabla_["nodo"].unique())
+    falla = pd.DataFrame({n: (crudo[[c for c in crudo.columns if c.startswith("falla_") and c.endswith("_" + n)]] > 0)
+                          .any(axis=1) for n in S}).resample("1h").max()
+    if "precursor_red" in crudo:
+        falla = falla | (crudo["precursor_red"] > 0).resample("1h").max().values[:, None]
+    malo = falla.stack().reindex(pd.MultiIndex.from_arrays([tabla_["fecha"], tabla_["nodo"]])).fillna(False).values
+    return (tabla_["clase"].values == 0) & ~malo.astype(bool)
+
+
+def _ajustadas(mod, t):
+    """Variables de anomalía, menos lo que la lluvia explica normalmente en ese sensor (con vacíos)."""
+    Z = t[mod.columnas_].values.astype(float)
+    if mod.lluvia_:
+        L = np.log1p(t[LLUVIA].values.astype(float))
+        for n, coef in mod.lluvia_.items():
+            m = t["nodo"].values == n
+            Z[m] -= L[m] @ coef
+    return Z
+
+
+def _sin_lluvia(mod, t):
+    """Lo mismo, con los vacíos rellenados con la mediana de la operación normal."""
+    Z = _ajustadas(mod, t)
+    return np.where(np.isnan(Z), mod.medianas_, Z)
+
+
+def entrenar_isolation(tabla_, columnas, filas, desvios=False, limpias=None, por_sensor=False, sin_lluvia=False):
+    """
+    Isolation Forest: aprende solo la operación normal y marca lo que se aparta. No usa las
+    etiquetas de evento ni dice el tipo. El puntaje se lleva a 0-1: 0 es la mediana de la operación
+    normal y 1, el 0,1 % más raro. Sin opciones, usa las mismas variables que el detector.
+
+    Mejoras (notebook 07):
+      desvios     solo las variables que miden rareza (columnas_anomalia);
+      limpias     filas de operación normal de verdad (operacion_limpia) para entrenar;
+      por_sensor  el puntaje se calibra con la operación normal de cada sensor (umbral por sensor);
+      sin_lluvia  a cada variable se le resta lo que la lluvia explica normalmente en ese sensor
+                  (regresión lineal sobre el logaritmo de la lluvia de 6 y 24 h).
+    """
+    normal = np.asarray(filas, bool) & (tabla_["clase"].values == 0)
+    if limpias is not None:
+        normal &= np.asarray(limpias, bool)
+    Xn = tabla_.loc[normal]
+    mod = IsolationForest(**COMPARACION["isolation"])
+    mod.columnas_ = columnas_anomalia(columnas) if desvios else list(columnas)
+    mod.lluvia_ = {}
+    if sin_lluvia:
+        for n, d in Xn.groupby("nodo"):
+            Y = d[mod.columnas_].astype(float)
+            A = np.column_stack([np.ones(len(d)), np.log1p(d[LLUVIA].values.astype(float))])
+            coef = np.linalg.lstsq(A, Y.fillna(Y.median()).values, rcond=None)[0]
+            mod.lluvia_[n] = coef[1:]                    # sin el intercepto: solo el efecto de la lluvia
+    mod.medianas_ = np.nanmedian(_ajustadas(mod, Xn), axis=0)
+    Zn = _sin_lluvia(mod, Xn)
+    mod.fit(Zn)
+    s = -mod.score_samples(Zn)
+    grupos = Xn["nodo"].values if por_sensor else np.full(len(Xn), "")
+    mod.rango_ = {g: tuple(np.quantile(s[grupos == g], (0.5, 0.999))) for g in np.unique(grupos)}
+    mod.por_sensor_ = por_sensor
+    return mod
+
+
 def probabilidades(mod, tabla_, columnas):
-    """Probabilidad de evento (1 − P(normal)) y tipo más probable, por fila."""
-    pr = mod.predict_proba(tabla_[columnas])
+    """Probabilidad de evento (1 − P(normal)) y tipo más probable, por fila. Con el Isolation
+    Forest, el puntaje de anomalía en 0-1 y tipo 0 (no lo sabe)."""
+    if isinstance(mod, IsolationForest):
+        s = -mod.score_samples(_sin_lluvia(mod, tabla_))
+        grupos = tabla_["nodo"].values if mod.por_sensor_ else np.full(len(tabla_), "")
+        p = np.zeros(len(tabla_))
+        for g, (lo, hi) in mod.rango_.items():
+            m = grupos == g
+            p[m] = np.clip((s[m] - lo) / (hi - lo), 0, 1)
+        return p, np.zeros(len(tabla_), int)
+    X = tabla_[columnas].fillna(VACIO) if isinstance(mod, RandomForestClassifier) else tabla_[columnas]
+    pr = mod.predict_proba(X)
     clases = list(mod.classes_)
     p_evento = 1 - pr[:, clases.index(0)]
     pr_ev = pr.copy()

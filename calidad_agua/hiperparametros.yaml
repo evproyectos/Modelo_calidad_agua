@@ -40,3 +40,40 @@ lstm:                          # notebook 08 · red_neuronal.construir y entrena
   paciencia: 2                 # épocas sin mejorar antes de parar
   lote: 512
   semillas: [0, 1, 2]          # una red por semilla; el pronóstico es el promedio
+
+anticipacion:                  # anticipacion.py · notebook 09 · ¿empieza un evento en las próximas 24 h?
+  arboles:                     # HistGradientBoostingClassifier
+    max_iter: 300
+    learning_rate: 0.05
+    max_leaf_nodes: 15
+    min_samples_leaf: 40
+    l2_regularization: 1.0
+    class_weight: balanced
+    early_stopping: true
+    validation_fraction: 0.1
+    random_state: 0
+  bosque:                      # RandomForestClassifier
+    n_estimators: 300
+    min_samples_leaf: 10
+    max_features: sqrt
+    class_weight: balanced_subsample
+    n_jobs: -1
+    random_state: 0
+  isolation:                   # IsolationForest (sin etiquetas)
+    n_estimators: 300
+    contamination: auto
+    random_state: 0
+  lstm:
+    largo_h: 48                # horas de historia de cada secuencia
+    unidades: 32
+    abandono: 0.2
+    tasa_aprendizaje: 0.001
+    epocas: 15
+    paciencia: 3
+    lote: 128
+    semillas: [0, 1, 2]
+  eleccion_aviso:              # umbral y confirmación de cada tipo (validación por bloques)
+    umbrales: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    confirmaciones_h: [1, 2, 3]
+    max_falsos_por_semana: 2.0 # en total, repartido entre los tipos: un aviso anticipado (amarillo)
+                               # cuesta menos que una alarma del detector (rojo), que tiene tope 1

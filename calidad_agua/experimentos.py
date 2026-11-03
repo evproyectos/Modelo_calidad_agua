@@ -1,11 +1,11 @@
 """
 Registro de los experimentos en MLflow (RF-002, RNF-005).
 
-Cada corrida de los notebooks 06, 07 y 08 queda registrada con:
+Cada corrida de los notebooks 06, 07, 08 y 09 queda registrada con:
   - los hiperparámetros (hiperparametros.yaml) y las demás decisiones de la corrida;
   - las métricas de validación y de prueba;
-  - la huella SHA-256 de los datos usados: las tres particiones, metadatos.json y el archivo de
-    pronóstico de lluvia, uno por uno y combinados en `dataset_sha256`;
+  - la huella SHA-256 de los datos usados: las tres particiones, metadatos.json, el catálogo de
+    eventos y el archivo de pronóstico de lluvia, uno por uno y combinados en `dataset_sha256`;
   - el commit de git del código y si el paquete tenía cambios sin guardar;
   - la fecha, la máquina y las versiones de Python y de las librerías;
   - los modelos guardados, las figuras y las tablas de resultados.
@@ -53,9 +53,11 @@ def sha256(ruta, bloque=1 << 20):
 
 
 def archivos_datos():
-    """Los archivos de los que salen los modelos: particiones, metadatos y pronóstico de lluvia."""
+    """Los archivos de los que salen los modelos: particiones, metadatos, catálogo de eventos (si
+    lo hay; el notebook 09 lo usa) y pronóstico de lluvia."""
     d = carga.carpeta_datos()
-    return [d / f"{p}.parquet" for p in carga.PARTICIONES] + [d / "metadatos.json", clima.ruta_archivo()]
+    extra = [d / "eventos_catalogo.csv"] if (d / "eventos_catalogo.csv").exists() else []
+    return [d / f"{p}.parquet" for p in carga.PARTICIONES] + [d / "metadatos.json"] + extra + [clima.ruta_archivo()]
 
 
 def huella_datos(archivos=None):

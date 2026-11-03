@@ -15,7 +15,7 @@ Archivos que se leen:
         evento_visible         evento visible en algún sensor (0-4)
         evento_red             evento ocurriendo en la red, aunque no se vea
   verdad_<particion>.parquet   valor de referencia de cada parámetro, sin ruido ni fallas
-  sensores.csv, fallas_sensor_catalogo.csv, metadatos.json
+  sensores.csv, fallas_sensor_catalogo.csv, eventos_catalogo.csv, metadatos.json
 """
 
 import json
@@ -105,6 +105,18 @@ def texto_periodo(particion):
 
 def tabla_sensores():
     return pd.read_csv(carpeta_datos() / "sensores.csv")
+
+
+def catalogo_eventos():
+    """Eventos del simulador: tipo, código, inicio, fin y, en los datos nuevos, causa y
+    deterioro previo. Sirve para medir cuánto se anticipa cada evento (notebook 09)."""
+    cat = pd.read_csv(carpeta_datos() / "eventos_catalogo.csv")
+    for c in ("inicio", "fin", "inicio_precursor"):
+        if c in cat:
+            cat[c] = pd.to_datetime(cat[c])
+    if "causa" not in cat:
+        cat["causa"] = "aleatoria"
+    return cat
 
 
 def catalogo_fallas():

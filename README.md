@@ -67,7 +67,8 @@ notebooks/    EDA y modelos, numerados en el orden de lectura
 pruebas/      pruebas unitarias (test_*.py) y la prueba de variables en vivo
 .github/      integración continua en GitHub (estilo, pruebas, cobertura y secretos)
 figuras/      figuras exportadas para el informe
-modelos/      modelos entrenados (se generan con los notebooks 06, 07 y 08; no se versionan)
+modelos/      modelos entrenados (se generan con los notebooks 06 a 09; no se versionan)
+herramientas/ correr_notebooks.py: corre todos los notebooks en orden y los guarda
 ```
 
 ## Instalación
@@ -118,25 +119,25 @@ python pruebas/prueba_variables_en_vivo.py
 
 ## Hiperparámetros y experimentos (MLflow)
 
-Los hiperparámetros de los tres modelos (árboles del pronóstico, detector y LSTM) y la grilla con
-que se elige el umbral del detector están en **`calidad_agua/hiperparametros.yaml`**, la única
+Los hiperparámetros de los modelos (árboles del pronóstico, detector, LSTM y anticipación de eventos)
+y las grillas con que se eligen los umbrales del detector y del aviso de anticipación están en **`calidad_agua/hiperparametros.yaml`**, la única
 fuente: el código y los notebooks los leen de ahí. Si se cambia algo, hay que volver a correr los
-notebooks 06, 07 y 08 y copiar los modelos nuevos al servicio.
+notebooks 06 a 09 y copiar los modelos nuevos al servicio.
 
-Cada corrida de los notebooks 06, 07 y 08 queda registrada en **MLflow** (`calidad_agua/experimentos.py`):
+Cada corrida de los notebooks 06 a 09 queda registrada en **MLflow** (`calidad_agua/experimentos.py`):
 
 - **parámetros:** los del YAML, los periodos de cada partición y las decisiones de la corrida
   (umbral y confirmación elegidos, modelo elegido por parámetro);
 - **métricas:** acierto en validación y en prueba por parámetro, curvas de aprendizaje de la LSTM,
   eventos detectados, falsas alarmas y métricas de clasificación del detector (precisión,
   sensibilidad, F1 y AUC-ROC);
-- **trazabilidad:** huella SHA-256 de los datos (cada partición, `metadatos.json` y el pronóstico
-  de lluvia, más una huella combinada), commit de git y si había cambios sin guardar, fecha,
+- **trazabilidad:** huella SHA-256 de los datos (cada partición, `metadatos.json`, el catálogo de
+  eventos y el pronóstico de lluvia, más una huella combinada), commit de git y si había cambios sin guardar, fecha,
   máquina y versiones de las librerías;
 - **archivos:** los modelos guardados, las figuras y las tablas de resultados (CSV).
 
 Las variantes que se comparan dentro de un notebook (versiones de clima en el 06, combinaciones de
-umbral y confirmación en el 07) quedan como corridas hijas, para compararlas en la interfaz.
+umbral y confirmación en el 07, los cuatro modelos de anticipación en el 09) quedan como corridas hijas, para compararlas en la interfaz.
 Cada modelo guardado lleva el id de su corrida, y el servicio lo muestra en `/health`.
 
 Los registros quedan en el proyecto, en `mlflow.db` y `mlartifacts/`, que no se versionan. Para
@@ -148,8 +149,8 @@ mlflow ui --backend-store-uri sqlite:///mlflow.db --workers 1
 
 (`--workers 1` hace falta en Windows: con varios procesos el servidor no arranca.)
 
-y abrir **http://127.0.0.1:5000**. Experimentos: `pronostico_24h` (notebooks 06 y 08) y
-`detector_eventos` (notebook 07).
+y abrir **http://127.0.0.1:5000**. Experimentos: `pronostico_24h` (notebooks 06 y 08),
+`detector_eventos` (notebook 07) y `anticipacion_eventos` (notebook 09).
 
 ## Pronóstico de lluvia
 
@@ -161,6 +162,13 @@ operación se usa el pronóstico vigente de los mismos cuatro modelos.
 
 ## Notebooks
 
+Para correrlos todos en orden (y guardarlos con sus resultados), desde la raíz con el venv activado:
+
+```
+python herramientas/correr_notebooks.py           # 01 a 09
+python herramientas/correr_notebooks.py 06 07     # solo algunos
+```
+
 | # | Notebook | Contenido |
 |---|---|---|
 | 01 | calidad_de_datos | Faltantes, cortes de comunicación, fallas de sensor |
@@ -171,3 +179,4 @@ operación se usa el pronóstico vigente de los mismos cuatro modelos.
 | 06 | modelo_pronostico | Modelo de pronóstico a 24 h (árboles), qué información de clima usar y evaluación contra la meta |
 | 07 | detector_eventos | Detector de eventos: alarmas, tipo de evento y falsas alarmas |
 | 08 | red_neuronal | Red LSTM (TensorFlow/Keras), comparación con los árboles y modelo final de pronóstico |
+| 09 | anticipacion_eventos | Probabilidad de que empiece un evento en las próximas 24 h (lluvia, deterioro en la fuente, baja presión): árboles, bosque aleatorio, Isolation Forest y LSTM; anticipación y avisos falsos; llegada de los eventos de la fuente a cada sensor |

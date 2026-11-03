@@ -11,6 +11,7 @@ Módulos:
   modelo        pronóstico con árboles (scikit-learn)
   red_neuronal  pronóstico con LSTM (TensorFlow/Keras)
   detector      detector de eventos
+  anticipacion  probabilidad de que empiece un evento en las próximas 24 h
   eventos       episodios a partir de etiquetas
   graficos      estilo común de las figuras
 """

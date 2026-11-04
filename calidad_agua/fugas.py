@@ -2,22 +2,26 @@
 Detección y ubicación de fugas (RF-002.2, notebook 10).
 
 Una fuga hace que la fuente entregue más agua de lo normal a esa hora y que baje la presión en
-la red. Pero el caudal y la presión cambian mucho a lo largo del día y de la semana, y con la
-temperatura (se consume más con calor). Por eso el enfoque tiene dos pasos:
+la red. Pero el caudal y la presión cambian mucho a lo largo del día y de la semana, con la
+época del año y con la temperatura (se consume más con calor). Por eso el enfoque tiene dos pasos:
 
-1. Regresión multivariable de la operación normal (scikit-learn, LinearRegression): para el
-   caudal de la fuente y la presión de cada sensor, lo esperado según la hora del día, si es fin
-   de semana, la temperatura del agua y la lluvia. Se ajusta con horas sin fuga del
-   entrenamiento. El residuo (medido − esperado) es lo que la operación normal no explica.
-2. Con los residuos (y sus medias de 3, 6 y 12 h), un modelo que decide si hay fuga. Se comparan:
+1. Lo esperado en operación normal, de dos formas:
+   - regresión multivariable (scikit-learn, LinearRegression): para el caudal de la fuente y la
+     presión de cada sensor, lo esperado según la hora del día, si es fin de semana, la
+     temperatura del agua y la lluvia; se ajusta con horas sin fuga del entrenamiento;
+   - línea base de la semana: la mediana de la misma hora en los 7 días anteriores (sigue sola
+     los cambios de época y de consumo; una fuga dura horas o pocos días y casi no la mueve).
+   El residuo (medido − esperado) es lo que la operación normal no explica.
+2. Con los residuos (y sus medias de 3 a 24 h), un modelo que decide si hay fuga. Se comparan:
      - Random Forest (supervisado, con las etiquetas de fuga);
      - SVM (máquina de vectores de soporte, supervisada);
      - Autoencoder (TensorFlow/Keras, sin etiquetas): aprende a reconstruir la operación normal;
        una hora es anómala si el error de reconstrucción pasa el percentil 95 del error en la
        operación normal (umbral de RF-002.2).
 
-Una fila = una hora (nivel de red). Clase = 1 si algún sensor del sistema ve una fuga en esa
-hora (evento_<n> == 5).
+Una fila = una hora (nivel de red). Clase = 1 mientras hay una fuga abierta (del catálogo: desde
+que el tubo se rompe hasta que se repara). Para operar se necesitan HISTORIA_H horas de caudal y
+presión hacia atrás (la línea base de la semana).
 
 Ubicación: con 3 puntos de medición no se puede ubicar una fuga al metro. Se dice en qué tramo
 está: entre qué dos sensores (los dos más cercanos por tubería al nodo de la fuga). Un Random
@@ -38,6 +42,8 @@ from .eventos import episodios
 
 CODIGO_FUGA = 5
 FUENTE = "J280"
+DIAS_BASE = 7                                 # línea base: misma hora de los 7 días anteriores
+HISTORIA_H = 24 * DIAS_BASE + 24              # historia que necesita tabla() (con la media de 24 h)
 VACIO = 0.0           # residuos vacíos (sin lectura): se rellenan con 0, "como lo esperado"
 HIPERPARAMETROS = configuracion.seccion("fugas")
 
@@ -77,8 +83,14 @@ def senales(h):
     return pd.DataFrame(d, index=h.index)
 
 
-def clase(h):
-    """1 si algún sensor ve una fuga en esa hora."""
+def clase(h, catalogo=None):
+    """1 mientras hay una fuga abierta (con `catalogo`: de su inicio a su fin); sin catálogo, 1 si
+    algún sensor ve una fuga en esa hora (evento_<n> == 5)."""
+    if catalogo is not None:
+        y = pd.Series(0, index=h.index)
+        for _, ev in catalogo[catalogo["codigo"] == CODIGO_FUGA].iterrows():
+            y[(h.index >= pd.Timestamp(ev["inicio"]).floor("1h")) & (h.index <= ev["fin"])] = 1
+        return y
     E = h[[c for c in h.columns if c.startswith("evento_") and c not in ("evento_visible", "evento_red")]]
     return (E == CODIGO_FUGA).any(axis=1).astype(int)
 
@@ -95,7 +107,10 @@ def ajustar_normal(h, normal):
 
 
 def tabla(h, normal_modelos):
-    """Residuos de cada señal contra lo esperado y sus ventanas; hora del día."""
+    """Residuos de cada señal contra lo esperado (regresión y línea base de la semana) y sus
+    ventanas; hora del día. `h` debe ser horaria y continua, con HISTORIA_H horas de historia
+    antes de la primera hora que se quiera evaluar."""
+    h = h.asfreq("1h")
     X, Y = _regresores(h), senales(h)
     v = {}
     for c, mod in normal_modelos.items():
@@ -103,6 +118,12 @@ def tabla(h, normal_modelos):
         v[f"{c}_residuo"] = r
         for k in [3, 6, 12]:
             v[f"{c}_residuo_media{k}h"] = r.rolling(k, min_periods=1).mean()
+        s = Y[c] if c in Y else pd.Series(np.nan, index=h.index)
+        base = pd.concat([s.shift(24 * k) for k in range(1, DIAS_BASE + 1)], axis=1).median(axis=1)
+        rb = s - base
+        v[f"{c}_vs_semana"] = rb
+        for k in [3, 6, 12, 24]:
+            v[f"{c}_vs_semana_media{k}h"] = rb.rolling(k, min_periods=1).mean()
         v[f"{c}_cambio1h"] = Y[c].diff() if c in Y else np.nan
         v[f"{c}_cambio3h"] = Y[c] - Y[c].shift(3) if c in Y else np.nan
     v["hora_sin"] = np.sin(2 * np.pi * h.index.hour / 24)

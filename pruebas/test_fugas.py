@@ -93,3 +93,15 @@ def test_ubicacion_por_eventos_vistos():
     assert pares.loc[0, "par"] == "A y C" and pares.loc[0, "vistos"] == 3
     r = U.evaluar_conjunto(V, cat, ["J280", "B"])
     assert r.loc["falla_cloro", "vistos"] == 1 and r.loc["contaminacion", "vistos"] == 0
+
+
+def test_clase_con_catalogo_y_linea_base_de_la_semana(h):
+    cat = pd.DataFrame({"codigo": [5, 1], "inicio": pd.to_datetime(["2025-03-15 10:20", "2025-03-20 00:00"]),
+                        "fin": pd.to_datetime(["2025-03-15 21:00", "2025-03-20 05:00"])})
+    y = F.clase(h, cat)
+    assert y.sum() == 12 and y["2025-03-15 10:00"] == 1 and y["2025-03-20 01:00"] == 0
+    X = F.tabla(h, F.ajustar_normal(h, (F.clase(h) == 0).values))
+    fuga = slice("2025-03-15 10:00", "2025-03-15 21:00")
+    assert X.loc[fuga, "caudal_vs_semana"].mean() == pytest.approx(2.0, abs=0.3)   # vs. la misma hora de la semana
+    assert abs(X.loc["2025-03-12", "caudal_vs_semana"].mean()) < 0.2
+    assert F.HISTORIA_H == 192

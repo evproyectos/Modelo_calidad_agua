@@ -7,7 +7,7 @@
 red:                           # carga.py · sensores del sistema (los demás del dataset se ignoran)
   # salida de la fuente (con el caudalímetro) y dos puntos de distribución elegidos con los
   # datos (notebook 05, sección de ubicación). Lista vacía = todos los sensores del dataset.
-  sensores: [J280, J69, J296]
+  sensores: [J280, J224, J237]
 
 pronostico_arboles:            # modelo.py · HistGradientBoostingRegressor, uno por parámetro
   loss: absolute_error         # error absoluto: más robusto a los eventos

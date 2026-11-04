@@ -3,7 +3,7 @@ Corre los notebooks en orden y los guarda con sus resultados (como "Run All" + g
 
 Uso, desde la raíz del proyecto y con el entorno activado:
 
-    python herramientas/correr_notebooks.py              # todos (01 a 09)
+    python herramientas/correr_notebooks.py              # todos (01 a 10)
     python herramientas/correr_notebooks.py 06 07 09     # solo esos
 
 Si un notebook falla, se detiene y muestra el error; los anteriores quedan guardados.

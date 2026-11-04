@@ -1,7 +1,10 @@
 # Modelo de calidad de agua
 
-Análisis exploratorio (EDA) y modelos de pronóstico de calidad de agua para una
-red de distribución con 21 sensores. Cada sensor reporta cada 15 minutos:
+Análisis exploratorio (EDA) y modelos de calidad de agua y fugas para una red de distribución
+con **tres puntos de medición**, como el informe del proyecto: la salida de la fuente (J280,
+con el caudalímetro) y dos puntos de la red (J224 y J237, elegidos con los datos en el
+notebook 05). El simulador exporta 21 sensores; el sistema usa solo esos tres (sección `red` de
+`calidad_agua/hiperparametros.yaml`). Cada punto reporta cada 15 minutos:
 
 | Parámetro | Columna | Unidad |
 |---|---|---|
@@ -14,8 +17,10 @@ red de distribución con 21 sensores. Cada sensor reporta cada 15 minutos:
 Además se registra el caudal de salida de la fuente (`Q_R1`, L/s) y la lluvia
 (`lluvia_mm_h`).
 
-Objetivo: pronosticar las próximas 24 h con al menos 80 % de exactitud,
-usando también datos climáticos.
+Objetivos: pronosticar las próximas 24 h con al menos 80 % de exactitud usando también datos
+climáticos; detectar eventos de calidad (contaminación, falla de cloración, turbidez en la
+fuente, falla de pH) y fugas, y decir en qué tramo está la fuga; anticipar los eventos 24 y
+48 h antes.
 
 ## Meta
 
@@ -54,7 +59,11 @@ periodos consecutivos:
 Las fechas de cada periodo vienen en `metadatos.json` junto con los datos y el código
 las lee de ahí (`carga.periodos()`); no están escritas a mano en los notebooks.
 
-Los datos no se versionan en este repositorio.
+Los datos no se versionan en este repositorio. El dataset actual es el **v6** del simulador
+(`Simulador_sensor`, rama `tres-nodos`): 2 años de la red D-Town con cinco tipos de evento, entre
+ellos 56 fugas de 5 a 30 L/s (la mitad empieza como una fuga pequeña que crece). Además de las
+particiones, `distancias_sensores.csv` da la distancia por tubería de cada nodo a cada sensor
+(para el tramo de las fugas).
 
 ## Estructura
 
@@ -67,7 +76,7 @@ notebooks/    EDA y modelos, numerados en el orden de lectura
 pruebas/      pruebas unitarias (test_*.py) y la prueba de variables en vivo
 .github/      integración continua en GitHub (estilo, pruebas, cobertura y secretos)
 figuras/      figuras exportadas para el informe
-modelos/      modelos entrenados (se generan con los notebooks 06 a 09; no se versionan)
+modelos/      modelos entrenados (se generan con los notebooks 06 a 10; no se versionan)
 herramientas/ correr_notebooks.py: corre todos los notebooks en orden y los guarda
 ```
 
@@ -119,12 +128,14 @@ python pruebas/prueba_variables_en_vivo.py
 
 ## Hiperparámetros y experimentos (MLflow)
 
-Los hiperparámetros de los modelos (árboles del pronóstico, detector, LSTM y anticipación de eventos)
+Los hiperparámetros de los modelos (árboles del pronóstico, detector, LSTM, anticipación de eventos y fugas)
 y las grillas con que se eligen los umbrales del detector y del aviso de anticipación están en **`calidad_agua/hiperparametros.yaml`**, la única
 fuente: el código y los notebooks los leen de ahí. Si se cambia algo, hay que volver a correr los
-notebooks 06 a 09 y copiar los modelos nuevos al servicio.
+notebooks 06 a 10 y copiar los modelos nuevos al servicio. La sección `red` dice qué sensores usa
+el sistema; la variable de entorno `SENSORES` la cambia sin tocar el archivo (`SENSORES=todos`
+usa los 21 del simulador).
 
-Cada corrida de los notebooks 06 a 09 queda registrada en **MLflow** (`calidad_agua/experimentos.py`):
+Cada corrida de los notebooks 06 a 10 queda registrada en **MLflow** (`calidad_agua/experimentos.py`):
 
 - **parámetros:** los del YAML, los periodos de cada partición y las decisiones de la corrida
   (umbral y confirmación elegidos, modelo elegido por parámetro);
@@ -150,7 +161,7 @@ mlflow ui --backend-store-uri sqlite:///mlflow.db --workers 1
 (`--workers 1` hace falta en Windows: con varios procesos el servidor no arranca.)
 
 y abrir **http://127.0.0.1:5000**. Experimentos: `pronostico_24h` (notebooks 06 y 08),
-`detector_eventos` (notebook 07) y `anticipacion_eventos` (notebook 09).
+`detector_eventos` (notebook 07), `anticipacion_eventos` (notebook 09) y `fugas` (notebook 10).
 
 ## Pronóstico de lluvia
 
@@ -165,7 +176,7 @@ operación se usa el pronóstico vigente de los mismos cuatro modelos.
 Para correrlos todos en orden (y guardarlos con sus resultados), desde la raíz con el venv activado:
 
 ```
-python herramientas/correr_notebooks.py           # 01 a 09
+python herramientas/correr_notebooks.py           # 01 a 10
 python herramientas/correr_notebooks.py 06 07     # solo algunos
 ```
 
@@ -175,8 +186,9 @@ python herramientas/correr_notebooks.py 06 07     # solo algunos
 | 02 | distribuciones | Rangos por parámetro y sensor, comparación con la norma |
 | 03 | temporal | Ciclos diarios y semanales, estacionalidad, autocorrelación |
 | 04 | clima | Lluvia de la zona (IMN, estación ITCR San Carlos), su efecto en turbidez, cloro, pH y temperatura, cuánto aportaría un pronóstico de lluvia y qué pronóstico usar |
-| 05 | eventos | Cómo se ven los eventos y las fallas en los datos |
+| 05 | eventos | Cómo se ven los eventos (también las fugas) y las fallas en los datos; dónde van los tres sensores del sistema |
 | 06 | modelo_pronostico | Modelo de pronóstico a 24 h (árboles), qué información de clima usar y evaluación contra la meta |
 | 07 | detector_eventos | Detector de eventos: alarmas, tipo de evento y falsas alarmas; comparación con Random Forest e Isolation Forest |
 | 08 | red_neuronal | Red LSTM (TensorFlow/Keras), comparación con los árboles y modelo final de pronóstico |
-| 09 | anticipacion_eventos | Probabilidad de que empiece un evento en las próximas 24 h (lluvia, deterioro en la fuente, baja presión): árboles, bosque aleatorio, Isolation Forest y LSTM; anticipación y avisos falsos; llegada de los eventos de la fuente a cada sensor |
+| 09 | anticipacion_eventos | Probabilidad de que empiece un evento en las próximas 24 h (lluvia, deterioro en la fuente, baja presión): árboles, bosque aleatorio, Isolation Forest y LSTM; anticipación y avisos falsos; horizonte de 48 h; llegada de los eventos de la fuente a cada sensor |
+| 10 | fugas | Fugas con el caudal de la fuente y la presión de los sensores: regresión de la operación normal y línea base de la semana; Random Forest, SVM y Autoencoder (percentil 95); tramo de la fuga entre dos sensores (RF-002.2) |

@@ -11,6 +11,12 @@ import pytest
 SENSORES = ["J280", "J10", "J20"]          # J280 es la fuente, como en la red real
 
 
+@pytest.fixture(autouse=True)
+def todos_los_sensores(monkeypatch):
+    """Las pruebas usan todos los sensores de la red sintética, no los de hiperparametros.yaml."""
+    monkeypatch.setenv("SENSORES", "todos")
+
+
 def red_sintetica(dias=8, inicio="2025-03-01", semilla=0, particion="entrenamiento"):
     rng = np.random.default_rng(semilla)
     idx = pd.date_range(inicio, periods=dias * 96, freq="15min")

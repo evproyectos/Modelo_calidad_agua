@@ -7,7 +7,9 @@ ANTES, con lo que se puede ver de las causas:
     suelo saturado + baja presión -> intrusión de contaminación);
   - deterioro gradual en la fuente (cloro que va bajando, pH que se va desviando) antes de una
     falla de cloración o de pH;
-  - horas de baja presión en la red.
+  - horas de baja presión en la red;
+  - una fuga pequeña que va creciendo antes de que el tubo se rompa: la fuente entrega un
+    poco más de lo típico a esa hora, cada día más, y la presión de los sensores baja.
 
 Una fila = una hora (nivel de red, no por sensor). Solo usa información disponible hasta esa
 hora. Clase = tipo del primer evento que empieza en (t, t + 24 h]; 0 si ninguno.
@@ -75,10 +77,11 @@ def horario(t15):
 
 
 def tipicos_por_hora(h, normal=None):
-    """Mediana de la fuente (cada parámetro) y del caudal por hora del día, en operación normal."""
+    """Mediana de la fuente (cada parámetro), de la presión de cada sensor y del caudal por hora
+    del día, en operación normal."""
     normal = np.ones(len(h), bool) if normal is None else np.asarray(normal, bool)
     tip = {}
-    for col in [f"{p}_{FUENTE}" for p in PARAMS] + ["Q_R1"]:
+    for col in [f"{p}_{FUENTE}" for p in PARAMS] + ["Q_R1"] + [f"P_{n}" for n in carga.sensores(h)]:
         x = h[col][normal]
         tip[col] = x.groupby(x.index.hour).median()
     return tip
@@ -130,6 +133,19 @@ def tabla(h, tipicos=None, pronostico=None, normal=None, lluvia_mes=None):
     q = h["Q_R1"]
     v["caudal"] = q
     v["caudal_desvio"] = q - tipicos["Q_R1"].reindex(hora).values
+    # fuga que crece: el exceso de caudal y la caída de presión, en promedio de 6 y 24 h, y
+    # cuánto cambiaron contra el día anterior
+    v["caudal_desvio_media6h"] = v["caudal_desvio"].rolling(6, min_periods=3).mean()
+    v["caudal_desvio_media24h"] = v["caudal_desvio"].rolling(24, min_periods=12).mean()
+    v["caudal_desvio_cambio24h"] = v["caudal_desvio_media24h"] - v["caudal_desvio_media24h"].shift(24)
+    d_p = pd.DataFrame({n: pres[f"P_{n}"] - tipicos[f"P_{n}"].reindex(hora).values
+                        for n in S if f"P_{n}" in tipicos}, index=h.index)
+    if d_p.shape[1]:
+        dp = d_p.median(axis=1)
+        v["red_presion_desvio"] = dp
+        v["red_presion_desvio_media24h"] = dp.rolling(24, min_periods=12).mean()
+        v["red_presion_desvio_cambio24h"] = v["red_presion_desvio_media24h"] - \
+            v["red_presion_desvio_media24h"].shift(24)
     # lluvia: reciente, acumulada (suelo saturado), de 30 días (sequía: lavado) y pronosticada
     ll = h["lluvia_mm_h"]
     for k in [1, 6, 24, 48, 72]:
@@ -160,7 +176,7 @@ def filas_utiles(h, obj):
 # Un modelo binario POR TIPO de evento (¿empieza un evento de este tipo en 24 h?). Con un solo
 # modelo multiclase, la contaminación al azar (la clase más numerosa y la que no tiene aviso
 # posible) se lleva el ajuste y el modelo no aprende las señales de los otros tipos (notebook 09).
-CODIGOS = [1, 2, 3, 4]
+CODIGOS = [1, 2, 3, 4, 5]
 
 
 def _por_tipo(crear, X, y):
@@ -315,7 +331,8 @@ def metricas_hora(y, p, umbral, utiles):
             "auc_pr": average_precision_score(yb, pp) if dos_clases else np.nan}
 
 
-def elegir_umbrales(index, P, catalogo, utiles, bloques, umbrales, confirmaciones, max_falsos_semana):
+def elegir_umbrales(index, P, catalogo, utiles, bloques, umbrales, confirmaciones, max_falsos_semana,
+                    horizonte=HORIZONTE_H):
     """
     Umbral y confirmación de cada tipo, con las probabilidades fuera de muestra de los `bloques`
     [(desde, hasta)]: el que más eventos de ese tipo anticipa con a lo sumo `max_falsos_semana`
@@ -323,7 +340,7 @@ def elegir_umbrales(index, P, catalogo, utiles, bloques, umbrales, confirmacione
     """
     tipos = list(P.columns)
     tope = max_falsos_semana / len(tipos)
-    semanas = {(d, h): _semanas(index, utiles, catalogo, d, h) for d, h in bloques}
+    semanas = {(d, h): _semanas(index, utiles, catalogo, d, h, horizonte) for d, h in bloques}
     filas = []
     for k in tipos:
         cat_k = catalogo if k == 0 else catalogo[catalogo["codigo"] == k]
@@ -332,7 +349,8 @@ def elegir_umbrales(index, P, catalogo, utiles, bloques, umbrales, confirmacione
             for u in umbrales:
                 tot = {"eventos": 0, "anticipados": 0, "falsos": 0, "semanas": 0.0, "anticipacion": []}
                 for desde, hasta in bloques:
-                    ev, _, r = evaluar(index, aviso_c[u], cat_k, utiles, desde, hasta, catalogo_falsos=catalogo)
+                    ev, _, r = evaluar(index, aviso_c[u], cat_k, utiles, desde, hasta, horizonte,
+                                       catalogo_falsos=catalogo)
                     tot["eventos"] += r["eventos"]
                     tot["anticipados"] += r["anticipados"]
                     tot["falsos"] += r["falsos"]

@@ -5,6 +5,12 @@ Los datos se leen de la carpeta indicada en la variable de entorno
 DATOS_SENSORES. Si no está definida, se usan los de la carpeta datos/ de este
 proyecto (no se versiona en git).
 
+Sensores del sistema: el simulador exporta muchos (21), pero el sistema usa solo los de
+hiperparametros.yaml, sección red (la salida de la fuente, con su caudalímetro, y dos
+puntos de la red de distribución). Al cargar se quitan los demás y evento_visible se
+recalcula con los que quedan. La variable de entorno SENSORES (p. ej. "J280,J69,J296")
+cambia la lista sin tocar el archivo, y SENSORES=todos usa todos (sirve para elegirlos).
+
 Archivos que se leen:
   entrenamiento / validacion / prueba .parquet
       Lecturas de los sensores, cada 15 min, más las etiquetas:
@@ -12,7 +18,7 @@ Archivos que se leen:
         Q_R1, lluvia_mm_h                                           caudal de la fuente y lluvia
         falla_<PARAM>_<nodo>   0 = sin falla; si no, código de falla del sensor
         evento_<nodo>          tipo de evento visible en ese sensor (0 = normal)
-        evento_visible         evento visible en algún sensor (0-4)
+        evento_visible         evento visible en algún sensor del sistema (0-5)
         evento_red             evento ocurriendo en la red, aunque no se vea
   verdad_<particion>.parquet   valor de referencia de cada parámetro, sin ruido ni fallas
   sensores.csv, fallas_sensor_catalogo.csv, eventos_catalogo.csv, metadatos.json
@@ -24,13 +30,41 @@ from pathlib import Path
 
 import pandas as pd
 
+from . import configuracion
+
 RAIZ = Path(__file__).resolve().parents[1]
 PARTICIONES = ["entrenamiento", "validacion", "prueba"]
 PARAMETROS = ["CL2", "TEMP", "TURB", "PH", "P"]
 UNIDADES = {"CL2": "mg/L", "TEMP": "°C", "TURB": "UNT", "PH": "", "P": "m", "Q": "L/s", "lluvia": "mm/h"}
 NOMBRES_PARAMETRO = {"CL2": "Cloro residual libre", "TEMP": "Temperatura", "TURB": "Turbidez",
                      "PH": "pH", "P": "Presión"}
-TIPOS_EVENTO = {0: "normal", 1: "contaminacion", 2: "falla_cloro", 3: "turbidez_fuente", 4: "falla_ph"}
+TIPOS_EVENTO = {0: "normal", 1: "contaminacion", 2: "falla_cloro", 3: "turbidez_fuente", 4: "falla_ph",
+                5: "fuga"}
+PREFIJOS_SENSOR = ("CL2", "TEMP", "TURB", "PH", "P", "evento", "falla")
+
+
+def sensores_sistema():
+    """Sensores del sistema (lista) o None si se usan todos los del dataset."""
+    entorno = os.environ.get("SENSORES", "").strip()
+    if entorno:
+        return None if entorno.lower() == "todos" else [s.strip() for s in entorno.split(",") if s.strip()]
+    return list(configuracion.seccion("red")["sensores"]) or None
+
+
+def filtrar_sensores(t, nodos):
+    """Deja solo las columnas de esos sensores (más caudal, lluvia y etiquetas de la red) y
+    recalcula evento_visible con ellos."""
+    if nodos is None:
+        return t
+    faltan = [n for n in nodos if f"CL2_{n}" not in t and f"P_{n}" not in t]
+    if faltan:
+        raise ValueError(f"Sensores {faltan} no están en el dataset")
+    quedan = [c for c in t.columns if c.split("_")[0] not in PREFIJOS_SENSOR or c in ("evento_visible", "evento_red")
+              or c.rsplit("_", 1)[-1] in nodos]
+    t = t[quedan].copy()
+    if "evento_visible" in t:
+        t["evento_visible"] = t[[f"evento_{n}" for n in nodos]].max(axis=1).astype(t["evento_visible"].dtype)
+    return t
 
 
 def carpeta_datos():
@@ -43,17 +77,19 @@ def carpeta_datos():
     return ruta
 
 
-def cargar(particion="entrenamiento", verdad=False):
-    """Una partición. Con verdad=True devuelve los valores reales sin ruido ni fallas."""
+def cargar(particion="entrenamiento", verdad=False, todos=False):
+    """Una partición. Con verdad=True devuelve los valores reales sin ruido ni fallas. Con
+    todos=True, con todos los sensores del dataset (para elegir dónde van los del sistema)."""
     nombre = f"verdad_{particion}" if verdad else particion
-    return pd.read_parquet(carpeta_datos() / f"{nombre}.parquet")
+    t = pd.read_parquet(carpeta_datos() / f"{nombre}.parquet")
+    return t if todos else filtrar_sensores(t, sensores_sistema())
 
 
-def cargar_todo(verdad=False):
+def cargar_todo(verdad=False, todos=False):
     """Las tres particiones unidas, con una columna 'particion'."""
     partes = []
     for p in PARTICIONES:
-        t = cargar(p, verdad)
+        t = cargar(p, verdad, todos)
         t["particion"] = p
         partes.append(t)
     return pd.concat(partes).sort_index()
@@ -104,7 +140,16 @@ def texto_periodo(particion):
 
 
 def tabla_sensores():
-    return pd.read_csv(carpeta_datos() / "sensores.csv")
+    t = pd.read_csv(carpeta_datos() / "sensores.csv")
+    nodos = sensores_sistema()
+    return t if nodos is None else t[t["nodo"].isin(nodos)].reset_index(drop=True)
+
+
+def distancias_sensores():
+    """Distancia por tubería (m) de cada nodo de consumo a cada sensor (simulador/exportar.py)."""
+    d = pd.read_csv(carpeta_datos() / "distancias_sensores.csv", index_col="nodo")
+    nodos = sensores_sistema()
+    return d if nodos is None else d[nodos]
 
 
 def catalogo_eventos():

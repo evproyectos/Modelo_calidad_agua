@@ -4,6 +4,11 @@
 # cada experimento los registra en MLflow. Si se cambia algo, hay que volver a correr los
 # notebooks 06, 07 y 08 (y copiar los modelos nuevos al servicio).
 
+red:                           # carga.py · sensores del sistema (los demás del dataset se ignoran)
+  # salida de la fuente (con el caudalímetro) y dos puntos de distribución elegidos con los
+  # datos (notebook 05, sección de ubicación). Lista vacía = todos los sensores del dataset.
+  sensores: [J280, J69, J296]
+
 pronostico_arboles:            # modelo.py · HistGradientBoostingRegressor, uno por parámetro
   loss: absolute_error         # error absoluto: más robusto a los eventos
   max_iter: 400                # máximo de árboles (se detiene antes si deja de mejorar)
@@ -91,3 +96,37 @@ anticipacion:                  # anticipacion.py · notebook 09 · ¿empieza un 
     confirmaciones_h: [1, 2, 3]
     max_falsos_por_semana: 2.0 # en total, repartido entre los tipos: un aviso anticipado (amarillo)
                                # cuesta menos que una alarma del detector (rojo), que tiene tope 1
+
+fugas:                         # fugas.py · notebook 10 (RF-002.2)
+  bosque:                      # RandomForestClassifier: ¿hay fuga en esta hora?
+    n_estimators: 300
+    min_samples_leaf: 10
+    max_features: sqrt
+    class_weight: balanced_subsample
+    n_jobs: -1
+    random_state: 0
+  svm:                         # SVC con escalado (probabilidades de Platt)
+    C: 1.0
+    kernel: rbf
+    gamma: scale
+    class_weight: balanced
+    random_state: 0
+  autoencoder:                 # Keras, solo con operación normal
+    capas: [32, 16, 6]         # codificador; el decodificador es el espejo
+    tasa_aprendizaje: 0.001
+    epocas: 60
+    paciencia: 5
+    lote: 256
+    percentil: 95              # umbral = percentil 95 del error en la operación normal
+    semilla: 0
+  tramo:                       # RandomForestClassifier: ¿entre qué dos sensores está?
+    n_estimators: 300
+    min_samples_leaf: 5
+    class_weight: balanced
+    n_jobs: -1
+    random_state: 0
+  eleccion:                    # umbral y confirmación, con validación por bloques
+    umbrales: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    umbrales_autoencoder: [1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0]   # en veces el percentil 95
+    confirmaciones_h: [1, 2, 3]
+    max_falsas_por_semana: 1.0  # en el peor bloque

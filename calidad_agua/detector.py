@@ -11,7 +11,10 @@ Variables (por lo encontrado en el notebook 05):
     del sensor, uno solo);
   - cuántos sensores de la red se desvían a la vez y cómo está la fuente (los eventos de la
     fuente se ven en toda la red; una falla del sensor, en uno solo);
-  - lluvia reciente (la turbidez sube con la lluvia sin que sea un evento) y hora del día.
+  - lluvia reciente (la turbidez sube con la lluvia sin que sea un evento) y hora del día;
+  - para las fugas: caudal de la fuente y presión de cada sensor contra lo típico a esa hora
+    (una fuga hace que la fuente entregue más y la presión baje), también en medias de 3 y 12 h,
+    porque las bombas y los tanques los hacen subir y bajar a lo largo del día.
 
 Una alarma de red se enciende cuando algún sensor supera el umbral de probabilidad.
 """
@@ -42,15 +45,27 @@ def horario(t15):
     return h
 
 
+def caudal(h):
+    """Caudal que entregan las fuentes (L/s); NaN si el dataset no lo trae."""
+    cols = [c for c in h.columns if c.startswith("Q_")]
+    return h[cols].sum(axis=1, min_count=len(cols)) if cols else pd.Series(np.nan, index=h.index)
+
+
 def tipicos_por_hora(h, S):
-    """Mediana de cada sensor y parámetro por hora del día (operación normal, entrenamiento)."""
+    """Mediana de cada sensor y parámetro (y del caudal de la fuente) por hora del día, en
+    operación normal del entrenamiento."""
     entr = (h["particion"] == "entrenamiento").values
     tip = {}
     for n in S:
         normal = entr & (h[f"evento_{n}"] == 0).values
-        for p in PARAMS:
+        for p in PARAMS + ["P"]:
             x = h[f"{p}_{n}"][normal]
             tip[p, n] = x.groupby(x.index.hour).median()
+    normal = entr
+    if "evento_visible" in h:
+        normal = normal & (h["evento_visible"] == 0).values
+    q = caudal(h)[normal]
+    tip["Q", "fuente"] = q.groupby(q.index.hour).median()
     return tip
 
 
@@ -72,6 +87,17 @@ def tabla(h, tip=None):
         comun[f"fuente_desvio_{p}"] = D[p][FUENTE]
         for k in [3, 6, 12]:
             comun[f"fuente_desvio_{p}_hace{k}h"] = D[p][FUENTE].shift(k)
+    # fugas: caudal de la fuente y presión mediana de los sensores contra lo típico a esa hora
+    tip_q = tip.get(("Q", "fuente"))
+    q_des = caudal(h) - (tip_q.reindex(hora).values if tip_q is not None else np.nan)
+    comun["caudal"] = caudal(h)
+    comun["caudal_desvio"] = q_des
+    comun["caudal_desvio_media3h"] = q_des.rolling(3, min_periods=1).mean()
+    comun["caudal_desvio_media12h"] = q_des.rolling(12, min_periods=3).mean()
+    comun["caudal_cambio_3h"] = comun["caudal"] - comun["caudal"].shift(3)
+    D_P = pd.DataFrame({n: h[f"P_{n}"].values - (tip["P", n].reindex(hora).values if ("P", n) in tip else np.nan)
+                        for n in S}, index=h.index)
+    comun["red_desvio_mediano_P"] = D_P.median(axis=1)
     comun["lluvia_6h"] = h["lluvia_mm_h"].rolling(6, min_periods=1).sum()
     comun["lluvia_24h"] = h["lluvia_mm_h"].rolling(24, min_periods=1).sum()
     comun["hora_sin"] = np.sin(2 * np.pi * hora / 24)
@@ -109,6 +135,9 @@ def tabla(h, tip=None):
         d["lecturas_hora"] = h[f"lecturas_{n}"]
         d["P"] = h[f"P_{n}"]
         d["cambio_P_1h"] = h[f"P_{n}"].diff()
+        d["desvio_P"] = D_P[n]
+        d["desvio_P_media3h"] = D_P[n].rolling(3, min_periods=1).mean()
+        d["desvio_P_media12h"] = D_P[n].rolling(12, min_periods=3).mean()
         d["clase"] = h[f"evento_{n}"].fillna(0).astype(int)
         d["particion"] = h["particion"]
         d["nodo"] = n
@@ -136,7 +165,8 @@ def entrenar_bosque(tabla_, columnas, filas):
 # variables que miden "qué tan raro está esto" (para el Isolation Forest mejorado): desvíos de lo
 # típico y cambios recientes; sin el sensor, la hora, la lluvia, la presión ni el cloro típico
 PREFIJOS_ANOMALIA = ("desvio_", "cambio_CL2", "cambio_TURB", "cambio_PH", "cambio_TEMP", "desv_",
-                     "red_sensores_desviados_", "red_desvio_mediano_", "fuente_desvio_", "parametros_desviados")
+                     "red_sensores_desviados_", "red_desvio_mediano_", "fuente_desvio_", "parametros_desviados",
+                     "caudal_desvio")
 LLUVIA = ["lluvia_6h", "lluvia_24h"]
 
 

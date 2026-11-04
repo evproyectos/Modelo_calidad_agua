@@ -77,3 +77,20 @@ def test_sensores_columnas_y_formato_largo(red):
     assert len(larga) == len(red) * len(SENSORES)
     assert set(larga.columns) >= {"CL2", "TEMP", "TURB", "PH", "P", "sensor", "evento"}
     assert larga.loc[larga["sensor"] == "J10", "evento"].iloc[0] == "contaminacion"
+
+
+def test_filtrar_sensores_y_evento_visible(red, monkeypatch):
+    t = red.copy()
+    t.loc[t.index[10:20], "evento_J20"] = 5
+    t["evento_visible"] = t[["evento_J280", "evento_J10", "evento_J20"]].max(axis=1)
+    f = carga.filtrar_sensores(t, ["J280", "J10"])
+    assert carga.sensores(f) == ["J280", "J10"]
+    assert "falla_CL2_J20" not in f and "evento_J20" not in f and "P_J20" not in f
+    assert {"Q_R1", "lluvia_mm_h", "evento_red", "falla_CL2_J10"} <= set(f.columns)
+    assert f["evento_visible"].max() == 0              # el evento solo lo veía J20
+    with pytest.raises(ValueError):
+        carga.filtrar_sensores(t, ["J280", "J99"])
+    monkeypatch.setenv("SENSORES", "J280, J20")
+    assert carga.sensores_sistema() == ["J280", "J20"]
+    monkeypatch.delenv("SENSORES")
+    assert carga.sensores_sistema() == list(carga.configuracion.seccion("red")["sensores"])

@@ -1,10 +1,12 @@
 # Modelo de calidad de agua
 
 Análisis exploratorio (EDA) y modelos de calidad de agua y fugas para una red de distribución
-con **tres puntos de medición**, como el informe del proyecto: la salida de la fuente (J280,
-con el caudalímetro) y dos puntos de la red (J224 y J237, elegidos con los datos en el
-notebook 05). El simulador exporta 21 sensores; el sistema usa solo esos tres (sección `red` de
-`calidad_agua/hiperparametros.yaml`). Cada punto reporta cada 15 minutos:
+con **10 puntos de medición**: la salida de la fuente (J280, con el caudalímetro) y 9 puntos de la
+red (J237, J224, J439, J1058, J69, J345, J101, J284 y J144). **La ubicación es provisional:** la
+eligieron los datos (notebook 05, sección 6) mientras la ASADA define dónde van los sensores.
+El simulador exporta 21 sensores; el sistema usa solo esos 10 (sección `red` de
+`calidad_agua/hiperparametros.yaml`). Para cambiarlos, ver **Cambiar los sensores** más abajo.
+Cada punto reporta cada 15 minutos:
 
 | Parámetro | Columna | Unidad |
 |---|---|---|
@@ -60,7 +62,7 @@ Las fechas de cada periodo vienen en `metadatos.json` junto con los datos y el c
 las lee de ahí (`carga.periodos()`); no están escritas a mano en los notebooks.
 
 Los datos no se versionan en este repositorio. El dataset actual es el **v6** del simulador
-(`Simulador_sensor`, rama `tres-nodos`): 2 años de la red D-Town con cinco tipos de evento, entre
+(`Simulador_sensor`): 2 años de la red D-Town con cinco tipos de evento, entre
 ellos 56 fugas de 5 a 30 L/s (la mitad empieza como una fuga pequeña que crece). Además de las
 particiones, `distancias_sensores.csv` da la distancia por tubería de cada nodo a cada sensor
 (para el tramo de las fugas).
@@ -77,8 +79,45 @@ pruebas/      pruebas unitarias (test_*.py) y la prueba de variables en vivo
 .github/      integración continua en GitHub (estilo, pruebas, cobertura y secretos)
 figuras/      figuras exportadas para el informe
 modelos/      modelos entrenados (se generan con los notebooks 06 a 10; no se versionan)
-herramientas/ correr_notebooks.py: corre todos los notebooks en orden y los guarda
+herramientas/ correr_notebooks.py: corre todos los notebooks en orden y los guarda;
+              reentrenar.py: vuelve a entrenar todos los modelos;
+              dataset_maestro.py: exporta el dataset maestro preprocesado (Parquet y CSV)
+docs/         esquema del dataset (docs/datos) y variables de los modelos (docs/modelos)
+registros/    registro del preprocesamiento (lo escriben los notebooks; no se versiona)
 ```
+
+## Preprocesamiento y etiquetas (RF-001.3 y RF-001.6)
+
+Antes de los modelos, las lecturas pasan por `calidad.lecturas_operativas`, que se usa igual al
+entrenar y en el servicio en tiempo real:
+
+1. Reglas de operación: presión mínima, rango físico y sensor pegado (notebook 01).
+2. `preprocesamiento.py`: quita los **picos** de cloro, turbidez, pH y temperatura con el método
+   **IQR** (k = 1,5) sobre la diferencia con las lecturas vecinas, **interpola** los huecos de hasta
+   30 min y **marca** los más largos en la columna `flag_imputacion` (`original`, `interpolado` o
+   `marcado`). Cada aplicación queda en `registros/preprocesamiento.log`. Parámetros en
+   `hiperparametros.yaml`, sección `preprocesamiento`; la evaluación está en el notebook 01.
+
+`etiquetas.py` arma el vector de etiquetas (`etiqueta` 0/1 y `fuente_etiqueta`) con los resultados
+de laboratorio, los registros de fugas de la ASADA o, si no hay, 3 lecturas seguidas fuera de la
+norma. Con el simulador, los modelos usan su verdad, y el notebook 05 compara la regla contra ella.
+
+El dataset maestro preprocesado, con las etiquetas, se exporta con un comando:
+
+```
+python herramientas/dataset_maestro.py        # datos_maestro/dataset_maestro.parquet y .csv
+```
+
+Esquema: `docs/datos/esquema-dataset.md`. Variables de cada modelo: `docs/modelos/features.md`.
+
+## Cambiar los sensores
+
+1. Escribir la lista en `calidad_agua/hiperparametros.yaml`, `red.sensores` (la fuente primero).
+2. Si algún punto no está entre los 21 del simulador, generar de nuevo el dataset en
+   `Simulador_sensor` con esos nodos.
+3. `python herramientas/correr_notebooks.py 05` para ver cuántos eventos ve la lista nueva, y
+   `python herramientas/reentrenar.py` para entrenar todo con ella. El servicio de monitoreo
+   carga los modelos nuevos solo.
 
 ## Instalación
 
@@ -182,11 +221,11 @@ python herramientas/correr_notebooks.py 06 07     # solo algunos
 
 | # | Notebook | Contenido |
 |---|---|---|
-| 01 | calidad_de_datos | Faltantes, cortes de comunicación, fallas de sensor |
-| 02 | distribuciones | Rangos por parámetro y sensor, comparación con la norma |
-| 03 | temporal | Ciclos diarios y semanales, estacionalidad, autocorrelación |
+| 01 | calidad_de_datos | Faltantes, cortes de comunicación, fallas de sensor; preprocesamiento (IQR, interpolación y `flag_imputacion`) y su evaluación |
+| 02 | distribuciones | Rangos por parámetro y sensor, comparación con la norma; correlaciones de Pearson y Spearman |
+| 03 | temporal | Ciclos diarios y semanales, estacionalidad, autocorrelación; descomposición STL |
 | 04 | clima | Lluvia de la zona (IMN, estación ITCR San Carlos), su efecto en turbidez, cloro, pH y temperatura, cuánto aportaría un pronóstico de lluvia y qué pronóstico usar |
-| 05 | eventos | Cómo se ven los eventos (también las fugas) y las fallas en los datos; dónde van los tres sensores del sistema |
+| 05 | eventos | Cómo se ven los eventos (también las fugas) y las fallas en los datos; dónde van los 10 sensores del sistema; vector de etiquetas |
 | 06 | modelo_pronostico | Modelo de pronóstico a 24 h (árboles), qué información de clima usar y evaluación contra la meta |
 | 07 | detector_eventos | Detector de eventos: alarmas, tipo de evento y falsas alarmas; comparación con Random Forest e Isolation Forest |
 | 08 | red_neuronal | Red LSTM (TensorFlow/Keras), comparación con los árboles y modelo final de pronóstico |

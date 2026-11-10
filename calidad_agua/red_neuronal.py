@@ -27,9 +27,10 @@ import keras  # noqa: E402
 from keras import layers  # noqa: E402
 import tensorflow as tf  # noqa: E402
 
+from .configuracion import seccion  # noqa: E402
 
 FUENTE = "J280"
-VENTANA_H = 48
+VENTANA_H = int(seccion("lstm").get("largo_h", 48))      # ventana deslizante (hiperparametros.yaml)
 HORIZONTE_H = 24
 SALIDAS = ["CL2", "TURB", "PH"]
 PISO_LOG = 0.05

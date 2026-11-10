@@ -6,8 +6,8 @@ DATOS_SENSORES. Si no está definida, se usan los de la carpeta datos/ de este
 proyecto (no se versiona en git).
 
 Sensores del sistema: el simulador exporta muchos (21), pero el sistema usa solo los de
-hiperparametros.yaml, sección red (la salida de la fuente, con su caudalímetro, y dos
-puntos de la red de distribución). Al cargar se quitan los demás y evento_visible se
+hiperparametros.yaml, sección red (10 puntos: la salida de la fuente, con su caudalímetro, y
+9 de la red de distribución). Al cargar se quitan los demás y evento_visible se
 recalcula con los que quedan. La variable de entorno SENSORES (p. ej. "J280,J69,J296")
 cambia la lista sin tocar el archivo, y SENSORES=todos usa todos (sirve para elegirlos).
 

@@ -1,12 +1,14 @@
 """
 Dónde van los sensores del sistema (notebook 05, sección de ubicación).
 
-El sistema tiene tres puntos de medición, como el informe: la salida de la fuente (J280, con el
-caudalímetro), que es obligatoria, y dos puntos de la red de distribución. Esos dos se eligen
-con los datos: entre los sensores que exporta el simulador, el par que deja ver más eventos del
-entrenamiento y la validación (la prueba no se usa para decidir) y, a igualdad, el que los ve
-antes. Los eventos de la fuente (cloro, turbidez, pH) los ve siempre J280; lo que decide son las
-contaminaciones y las fugas, que pasan dentro de la red.
+El sistema tiene 10 puntos de medición (hiperparametros.yaml, red.cantidad): la salida de la
+fuente (J280, con el caudalímetro), que es obligatoria, y 9 puntos de la red de distribución.
+Mientras la ASADA no defina dónde van, se eligen con los datos (mejor_conjunto): entre los
+sensores que exporta el simulador, uno por uno, el que más eventos nuevos deja ver del
+entrenamiento y la validación (la prueba no se usa para decidir); a igualdad, el que ve más fugas
+y contaminaciones y el que las ve antes. Los eventos de la fuente (cloro, turbidez, pH) los ve
+siempre J280; lo que decide son las contaminaciones y las fugas, que pasan dentro de la red.
+Cuando la ASADA dé la lista, se escribe en red.sensores y el notebook solo evalúa esa lista.
 """
 
 from itertools import combinations
@@ -60,3 +62,34 @@ def mejores_pares(V, catalogo, fuente=FUENTE, candidatos=None):
     out = pd.DataFrame(filas)
     return out.sort_values(["vistos", "fugas", "contaminaciones", "retraso_mediano_h"],
                            ascending=[False, False, False, True]).reset_index(drop=True)
+
+
+def _puntaje(V, tipo, nodos):
+    r = V[nodos].min(axis=1)
+    vistos = r.notna()
+    return (int(vistos.sum()), int(vistos[tipo == "fuga"].sum()), int(vistos[tipo == "contaminacion"].sum()),
+            -float(r.median()) if vistos.any() else -np.inf)
+
+
+def mejor_conjunto(V, catalogo, n=10, fuente=FUENTE, candidatos=None):
+    """
+    Elección voraz de `n` sensores (la fuente y n - 1 más): en cada paso se agrega el que deja ver
+    más eventos; a igualdad, más fugas, más contaminaciones y menos retraso mediano. Devuelve la
+    lista elegida y una tabla con lo que aportó cada uno.
+    """
+    candidatos = [c for c in (candidatos or V.columns) if c != fuente]
+    tipo = catalogo.set_index("id").loc[V.index, "tipo"]
+    elegidos, filas = [fuente], []
+    p = _puntaje(V, tipo, elegidos)
+    filas.append({"sensor": fuente, "vistos": p[0], "fugas": p[1], "contaminaciones": p[2],
+                  "retraso_mediano_h": -p[3], "motivo": "salida de la fuente (obligatorio)"})
+    while len(elegidos) < n and candidatos:
+        mejor = max(candidatos, key=lambda c: _puntaje(V, tipo, elegidos + [c]))
+        p = _puntaje(V, tipo, elegidos + [mejor])
+        elegidos.append(mejor)
+        candidatos.remove(mejor)
+        filas.append({"sensor": mejor, "vistos": p[0], "fugas": p[1], "contaminaciones": p[2],
+                      "retraso_mediano_h": -p[3], "motivo": "el que más agrega"})
+    tabla = pd.DataFrame(filas)
+    tabla["eventos_nuevos"] = tabla["vistos"].diff().fillna(tabla["vistos"]).astype(int)
+    return elegidos, tabla

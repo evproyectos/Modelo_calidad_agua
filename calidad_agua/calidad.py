@@ -5,11 +5,14 @@ Una lectura de calidad (CL2, TEMP, TURB, PH) se considera NO válida si:
   - tiene una falla de sensor identificada (columna falla_<PARAM>_<nodo> distinta de 0), o
   - la presión del nodo es menor a PRESION_MINIMA (tubería sin agua: el sensor no mide agua), o
   - el valor está fuera del rango físico posible en agua potable (RANGO_FISICO).
+
+lecturas_operativas() aplica después el preprocesamiento (preprocesamiento.py, RF-001.3): quita
+los picos sueltos por IQR, interpola los huecos de hasta 30 min y agrega flag_imputacion.
 """
 
 import numpy as np
 
-from . import carga
+from . import carga, preprocesamiento
 
 PRESION_MINIMA = 1.0          # m
 CALIDAD = ["CL2", "TEMP", "TURB", "PH"]
@@ -69,11 +72,12 @@ def pegado(x, lecturas=LECTURAS_PEGADO):
     return (sin_cambio & (x > 0)).values
 
 
-def lecturas_operativas(t):
+def lecturas_operativas(t, preprocesar=True):
     """
     Copia de la tabla con las lecturas no válidas en NaN, usando SOLO reglas que funcionan en
     operación: presión mínima, rango físico y sensor pegado. No usa las columnas falla_*, que en
-    operación no existen. Las demás fallas (deriva, picos, ruido) quedan en los datos.
+    operación no existen. Con `preprocesar` (por defecto), después quita los picos (IQR) e
+    interpola los huecos cortos (preprocesamiento.py); la deriva y el ruido quedan en los datos.
     """
     t = _como_float32(t)
     for n in carga.sensores(t):
@@ -83,4 +87,4 @@ def lecturas_operativas(t):
             lo, hi = RANGO_FISICO[p]
             malo = ((t[f"P_{n}"] < PRESION_MINIMA) | (x < lo) | (x > hi)).values | pegado(x)
             t.loc[malo, col] = np.nan
-    return t
+    return preprocesamiento.preprocesar(t) if preprocesar else t

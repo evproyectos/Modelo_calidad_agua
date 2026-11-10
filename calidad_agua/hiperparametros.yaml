@@ -5,9 +5,27 @@
 # notebooks 06, 07 y 08 (y copiar los modelos nuevos al servicio).
 
 red:                           # carga.py · sensores del sistema (los demás del dataset se ignoran)
-  # salida de la fuente (con el caudalímetro) y dos puntos de distribución elegidos con los
-  # datos (notebook 05, sección de ubicación). Lista vacía = todos los sensores del dataset.
-  sensores: [J280, J224, J237]
+  # 10 puntos de medición: la salida de la fuente (con el caudalímetro) y 9 de la red de
+  # distribución. PROVISIONALES: elegidos con los datos (notebook 05, sección de ubicación)
+  # mientras la ASADA define dónde van; cuando dé la lista, se escribe aquí y se reentrena
+  # (herramientas/reentrenar.py). Lista vacía = todos los sensores del dataset.
+  cantidad: 10
+  sensores: [J280, J237, J224, J439, J1058, J69, J345, J101, J284, J144]
+
+preprocesamiento:              # preprocesamiento.py · RF-001.3, lecturas cada 15 min
+  paso_min: 15
+  max_hueco_min: 30            # huecos de hasta 30 min se interpolan; los más largos se marcan
+  iqr: true                    # quitar lecturas atípicas (picos) con el método IQR
+  iqr_k: 1.5                   # Q1 - k·IQR y Q3 + k·IQR, sobre la diferencia con las vecinas
+  # solo en los parámetros de calidad: en la presión y el caudal los cambios bruscos son reales
+  # (las bombas arrancan y paran), y un aguacero repentino también; a esos solo se les interpolan
+  # los huecos
+  iqr_parametros: [CL2, TURB, PH, TEMP]
+  iqr_minimo:                  # además, apartarse de las vecinas al menos esto (por encima del ruido)
+    CL2: 0.15                  # mg/L
+    TURB: 2.0                  # UNT (los eventos de turbidez tienen subidas bruscas reales)
+    PH: 0.2
+    TEMP: 1.0                  # °C
 
 pronostico_arboles:            # modelo.py · HistGradientBoostingRegressor, uno por parámetro
   loss: absolute_error         # error absoluto: más robusto a los eventos
@@ -51,6 +69,7 @@ eleccion_alarma:               # notebook 07 · umbral y confirmación, con vali
   max_falsas_por_semana: 1.0   # en el peor bloque
 
 lstm:                          # notebook 08 · red_neuronal.construir y entrenamiento
+  largo_h: 48                  # ventana deslizante: horas de historia de cada secuencia (24, 48 o 72)
   unidades: 48                 # tamaño de la capa LSTM
   abandono: 0.1                # dropout
   l2: 0.0

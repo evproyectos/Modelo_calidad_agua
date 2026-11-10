@@ -98,8 +98,8 @@ def tabla(h, tip=None):
     D_P = pd.DataFrame({n: h[f"P_{n}"].values - (tip["P", n].reindex(hora).values if ("P", n) in tip else np.nan)
                         for n in S}, index=h.index)
     comun["red_desvio_mediano_P"] = D_P.median(axis=1)
-    comun["lluvia_6h"] = h["lluvia_mm_h"].rolling(6, min_periods=1).sum()
-    comun["lluvia_24h"] = h["lluvia_mm_h"].rolling(24, min_periods=1).sum()
+    for k in [6, 12, 24]:                     # lluvia acumulada (RF-001.5 d)
+        comun[f"lluvia_{k}h"] = h["lluvia_mm_h"].rolling(k, min_periods=1).sum()
     comun["hora_sin"] = np.sin(2 * np.pi * hora / 24)
     comun["hora_cos"] = np.cos(2 * np.pi * hora / 24)
     comun = pd.DataFrame(comun, index=h.index)
@@ -167,7 +167,7 @@ def entrenar_bosque(tabla_, columnas, filas):
 PREFIJOS_ANOMALIA = ("desvio_", "cambio_CL2", "cambio_TURB", "cambio_PH", "cambio_TEMP", "desv_",
                      "red_sensores_desviados_", "red_desvio_mediano_", "fuente_desvio_", "parametros_desviados",
                      "caudal_desvio")
-LLUVIA = ["lluvia_6h", "lluvia_24h"]
+LLUVIA = ["lluvia_6h", "lluvia_12h", "lluvia_24h"]
 
 
 def columnas_anomalia(columnas):

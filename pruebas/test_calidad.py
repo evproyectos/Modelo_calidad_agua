@@ -20,7 +20,7 @@ def test_valores_fuera_del_rango_fisico(red):
     red.loc[red.index[6], "PH_J20"] = 3.0
     red.loc[red.index[7], "TEMP_J20"] = 45.0
     red.loc[red.index[8], "TURB_J20"] = -1.0
-    t = calidad.lecturas_operativas(red)
+    t = calidad.lecturas_operativas(red, preprocesar=False)
     assert np.isnan(t["CL2_J20"].iloc[5])
     assert np.isnan(t["PH_J20"].iloc[6])
     assert np.isnan(t["TEMP_J20"].iloc[7])
@@ -31,7 +31,7 @@ def test_valores_fuera_del_rango_fisico(red):
 def test_sensor_pegado_se_detecta_a_las_16_lecturas_iguales(red):
     red.loc[red.index[100:116], "CL2_J10"] = 0.7       # 16 lecturas idénticas = 4 h sin cambio
     red.loc[red.index[200:215], "CL2_J20"] = 0.6       # 15 lecturas: todavía no está pegado
-    t = calidad.lecturas_operativas(red)
+    t = calidad.lecturas_operativas(red, preprocesar=False)
     assert np.isnan(t["CL2_J10"].iloc[115])
     assert t["CL2_J10"].iloc[100:115].notna().all()
     assert t["CL2_J20"].iloc[200:215].notna().all()
@@ -75,3 +75,11 @@ def test_norma_del_decreto():
     assert calidad.NORMA["CL2"] == {"minimo": 0.3, "maximo": 1.0}
     assert calidad.NORMA["TURB"]["maximo"] == 5.0
     assert calidad.NORMA["PH"] == {"minimo": 6.5, "maximo": 8.5}
+
+
+def test_con_preprocesamiento_la_lectura_invalida_suelta_se_interpola(red):
+    red.loc[red.index[5], "CL2_J20"] = 6.0                     # fuera de rango: se quita...
+    t = calidad.lecturas_operativas(red)
+    antes, despues = red["CL2_J20"].iloc[4], red["CL2_J20"].iloc[6]
+    assert abs(t["CL2_J20"].iloc[5] - (antes + despues) / 2) < 1e-5   # ...y se rellena (hueco de 15 min)
+    assert t["flag_imputacion"].iloc[5] == "interpolado" and t["flag_imputacion"].iloc[20] == "original"

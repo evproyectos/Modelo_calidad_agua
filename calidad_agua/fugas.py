@@ -23,7 +23,7 @@ Una fila = una hora (nivel de red). Clase = 1 mientras hay una fuga abierta (del
 que el tubo se rompe hasta que se repara). Para operar se necesitan HISTORIA_H horas de caudal y
 presión hacia atrás (la línea base de la semana).
 
-Ubicación: con 3 puntos de medición no se puede ubicar una fuga al metro. Se dice en qué tramo
+Ubicación: con 10 puntos de medición no se puede ubicar una fuga al metro. Se dice en qué tramo
 está: entre qué dos sensores (los dos más cercanos por tubería al nodo de la fuga). Un Random
 Forest aprende el tramo con el patrón de residuos de presión y caudal en las horas de fuga.
 """

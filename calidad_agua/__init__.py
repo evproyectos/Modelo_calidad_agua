@@ -4,6 +4,12 @@ calidad_agua: limpieza de datos, variables y modelos para sensores de calidad de
 Módulos:
   carga         lectura del dataset de los sensores
   calidad       limpieza de lecturas (con etiquetas de falla y solo con reglas de operación)
+  preprocesamiento  picos por IQR, interpolación de huecos cortos y flag_imputacion (RF-001.3)
+  etiquetas     vector de etiquetas: laboratorio, registros de la ASADA o umbral IoT (RF-001.6)
+  ubicacion     dónde van los sensores del sistema
+  clima         pronóstico de lluvia (Open-Meteo)
+  fugas         detección de fugas y tramo de la red
+  deriva        deriva de los datos respecto del entrenamiento
   metas         meta del proyecto: tolerancias y criterio de acierto
   configuracion hiperparámetros de los modelos (hiperparametros.yaml)
   experimentos  registro de los experimentos en MLflow
@@ -16,4 +22,4 @@ Módulos:
   graficos      estilo común de las figuras
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

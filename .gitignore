@@ -8,14 +8,14 @@ build/
 .ipynb_checkpoints/
 
 # datos: no se versionan aquí
-datos/
+/datos/
 *.parquet
 
 # configuración local
 .env
 
 # modelos entrenados: se regeneran corriendo los notebooks 06, 07 y 08
-modelos/
+/modelos/
 
 # registros de MLflow (base y archivos de cada experimento)
 mlflow.db
@@ -27,3 +27,9 @@ mlruns/
 # reportes de cobertura de pytest-cov
 .coverage
 htmlcov/
+
+# registro del preprocesamiento (lo escriben los notebooks)
+/registros/
+
+# dataset maestro exportado (herramientas/dataset_maestro.py)
+/datos_maestro/

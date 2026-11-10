@@ -148,7 +148,7 @@ def tabla(h, tipicos=None, pronostico=None, normal=None, lluvia_mes=None):
             v["red_presion_desvio_media24h"].shift(24)
     # lluvia: reciente, acumulada (suelo saturado), de 30 días (sequía: lavado) y pronosticada
     ll = h["lluvia_mm_h"]
-    for k in [1, 6, 24, 48, 72]:
+    for k in [1, 6, 12, 24, 48, 72]:
         v[f"lluvia_{k}h"] = ll.rolling(k, min_periods=1).sum()
     v["lluvia_30d"] = lluvia_30d(ll) if lluvia_mes is None else lluvia_mes.reindex(h.index)
     v["lluvia_6h_max_24h"] = v["lluvia_6h"].rolling(24, min_periods=1).max()

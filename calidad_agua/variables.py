@@ -13,7 +13,7 @@ Variables (por lo encontrado en el EDA):
   - de calendario: hora del día (ciclo diario). La época del año NO se usa: con 16 meses de
     entrenamiento el modelo ve cada época una sola vez y aprende cómo fue ese año en particular,
     que no se repite el siguiente (notebook 06);
-  - de clima y operación: lluvia acumulada reciente (6, 24 y 72 h), lluvia pronosticada para las
+  - de clima y operación: lluvia acumulada reciente (6, 12, 24 y 72 h), lluvia pronosticada para las
     próximas 24 h por tramos (calidad_agua.clima, si se pasa `pronostico`) y caudal de la fuente;
   - de calidad del dato: cuántas lecturas válidas tuvo la hora.
 """
@@ -29,7 +29,7 @@ PARAMS = ["CL2", "TURB", "PH", "TEMP"]
 
 def horario(t15):
     """Promedios horarios de las lecturas válidas, más eventos (máximo) y partición de cada hora."""
-    num = t15.drop(columns=[c for c in t15.columns if c == "particion"])
+    num = t15.drop(columns=[c for c in t15.columns if c in ("particion", "flag_imputacion")])
     h = num.resample("1h").mean()
     S = carga.sensores(t15)
     for n in S:
@@ -73,7 +73,7 @@ def tabla(h, horizonte=24, tipicos=None, h_objetivo=None, pronostico=None):
         comun[f"red_{p}_mediana"] = red.median(axis=1)
     comun["caudal"] = h["Q_R1"]
     comun["caudal_media24h"] = h["Q_R1"].rolling(24, min_periods=12).mean()
-    for k in [6, 24, 72]:
+    for k in [6, 12, 24, 72]:
         comun[f"lluvia_{k}h"] = h["lluvia_mm"].rolling(k, min_periods=1).sum()
     comun = pd.DataFrame(comun, index=h.index)
     if pronostico is not None:

@@ -82,3 +82,5 @@ Cuando la ASADA defina dónde van:
    `Simulador_sensor` con esos nodos (y sus distancias por tubería).
 3. Correr `python herramientas/reentrenar.py`: vuelve a entrenar todos los modelos y deja todo en
    MLflow. El servicio de monitoreo recarga los modelos nuevos solo, sin reiniciarlo.
+4. En el notebook 07 (sección 6), revisar si el detector elegido sigue ganando; si no, cambiar
+   `detector.modelo` (`bosque` o `arboles`) y correr `python herramientas/reentrenar.py 07`.

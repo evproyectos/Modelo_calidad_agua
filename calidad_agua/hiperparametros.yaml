@@ -38,25 +38,30 @@ pronostico_arboles:            # modelo.py · HistGradientBoostingRegressor, uno
   validation_fraction: 0.1     # parte del entrenamiento que se aparta para la parada temprana
   random_state: 0
 
-detector:                      # detector.py · HistGradientBoostingClassifier
-  max_iter: 300
-  learning_rate: 0.05
-  max_leaf_nodes: 31
-  min_samples_leaf: 40
-  l2_regularization: 1.0
-  class_weight: balanced       # los eventos son pocos frente a las horas normales
-  early_stopping: true
-  validation_fraction: 0.1
-  random_state: 0
-
-detector_comparacion:          # notebook 07 · otros modelos con las mismas variables (RF-002.1)
+detector:                      # detector.py · notebook 07
+  # el que usa el servicio: bosque (RandomForestClassifier) o arboles (HistGradientBoostingClassifier).
+  # Con 10 sensores gana el bosque con la regla de elección (notebook 07, sección 6); con 3 ganaban
+  # los árboles. El notebook 07 compara siempre los dos.
+  modelo: bosque
   bosque:                      # RandomForestClassifier
     n_estimators: 200
     min_samples_leaf: 20
     max_features: sqrt
-    class_weight: balanced_subsample
+    class_weight: balanced_subsample   # los eventos son pocos frente a las horas normales
     n_jobs: -1
     random_state: 0
+  arboles:                     # HistGradientBoostingClassifier
+    max_iter: 300
+    learning_rate: 0.05
+    max_leaf_nodes: 31
+    min_samples_leaf: 40
+    l2_regularization: 1.0
+    class_weight: balanced
+    early_stopping: true
+    validation_fraction: 0.1
+    random_state: 0
+
+detector_comparacion:          # notebook 07 · modelo sin etiquetas con las mismas variables (RF-002.1)
   isolation:                   # IsolationForest (sin etiquetas)
     n_estimators: 300
     contamination: auto

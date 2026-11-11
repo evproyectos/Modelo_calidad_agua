@@ -1,5 +1,8 @@
 """
-Detector de eventos (scikit-learn, HistGradientBoostingClassifier).
+Detector de eventos (scikit-learn): RandomForestClassifier o HistGradientBoostingClassifier, según
+`detector.modelo` en hiperparametros.yaml. Con los 10 sensores del sistema se usa el Random Forest,
+que gana con la regla de elección del notebook 07 (más eventos detectados con menos de 1 falsa
+alarma por semana en todos los bloques); el notebook compara siempre los dos.
 
 Una fila = un sensor en una hora. El modelo estima la probabilidad de que en esa hora haya un
 evento visible en ese sensor, y de qué tipo. Solo usa información disponible hasta esa hora.
@@ -31,7 +34,9 @@ UMBRAL_DESVIO = {"CL2": 0.1, "TURB": 0.5, "PH": 0.2, "TEMP": 1.0}
 FUENTE = "J280"
 
 HIPERPARAMETROS = configuracion.seccion("detector")                # hiperparametros.yaml
-COMPARACION = configuracion.seccion("detector_comparacion")       # otros modelos (notebook 07)
+COMPARACION = configuracion.seccion("detector_comparacion")       # Isolation Forest (notebook 07)
+MODELO = HIPERPARAMETROS.get("modelo", "bosque")                   # el que usa el servicio
+NOMBRES = {"bosque": "Random Forest", "arboles": "HistGradientBoosting"}
 VACIO = -999          # el bosque de scikit-learn no acepta vacíos en todas las versiones
 
 
@@ -149,17 +154,38 @@ def columnas_entrada(tabla_):
     return [c for c in tabla_.columns if c not in {"fecha", "particion", "nodo", "clase"}]
 
 
-def entrenar(tabla_, columnas, filas):
-    mod = HistGradientBoostingClassifier(categorical_features=[columnas.index("sensor")], **HIPERPARAMETROS)
+def entrenar(tabla_, columnas, filas, modelo=None):
+    """El detector: el modelo de `detector.modelo` en hiperparametros.yaml (o el que se pida)."""
+    modelo = modelo or MODELO
+    if modelo not in NOMBRES:
+        raise ValueError(f"detector.modelo debe ser uno de {list(NOMBRES)}, no {modelo!r}")
+    return (entrenar_bosque if modelo == "bosque" else entrenar_arboles)(tabla_, columnas, filas)
+
+
+def entrenar_bosque(tabla_, columnas, filas):
+    mod = RandomForestClassifier(**HIPERPARAMETROS["bosque"])
+    mod.fit(entrada(mod, tabla_.loc[filas, columnas]), tabla_.loc[filas, "clase"])
+    return mod
+
+
+def entrenar_arboles(tabla_, columnas, filas):
+    mod = HistGradientBoostingClassifier(categorical_features=[columnas.index("sensor")], **HIPERPARAMETROS["arboles"])
     mod.fit(tabla_.loc[filas, columnas], tabla_.loc[filas, "clase"])
     return mod
 
 
-def entrenar_bosque(tabla_, columnas, filas):
-    """Random Forest con las mismas variables y etiquetas que el detector (para compararlos)."""
-    mod = RandomForestClassifier(**COMPARACION["bosque"])
-    mod.fit(tabla_.loc[filas, columnas].fillna(VACIO), tabla_.loc[filas, "clase"])
-    return mod
+def entrada(mod, X):
+    """Las variables como las recibe el modelo: el bosque, con los vacíos como VACIO."""
+    return X.fillna(VACIO) if isinstance(mod, RandomForestClassifier) else X
+
+
+def nombre(mod):
+    return "Random Forest" if isinstance(mod, RandomForestClassifier) else "HistGradientBoosting"
+
+
+def arboles(mod):
+    """Cuántos árboles tiene el modelo."""
+    return len(mod.estimators_) if isinstance(mod, RandomForestClassifier) else int(mod.n_iter_)
 
 
 # variables que miden "qué tan raro está esto" (para el Isolation Forest mejorado): desvíos de lo
@@ -252,8 +278,7 @@ def probabilidades(mod, tabla_, columnas):
             m = grupos == g
             p[m] = np.clip((s[m] - lo) / (hi - lo), 0, 1)
         return p, np.zeros(len(tabla_), int)
-    X = tabla_[columnas].fillna(VACIO) if isinstance(mod, RandomForestClassifier) else tabla_[columnas]
-    pr = mod.predict_proba(X)
+    pr = mod.predict_proba(entrada(mod, tabla_[columnas]))
     clases = list(mod.classes_)
     p_evento = 1 - pr[:, clases.index(0)]
     pr_ev = pr.copy()

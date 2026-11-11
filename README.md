@@ -118,6 +118,9 @@ Esquema: `docs/datos/esquema-dataset.md`. Variables de cada modelo: `docs/modelo
 3. `python herramientas/correr_notebooks.py 05` para ver cuántos eventos ve la lista nueva, y
    `python herramientas/reentrenar.py` para entrenar todo con ella. El servicio de monitoreo
    carga los modelos nuevos solo.
+4. Revisar en el notebook 07 (sección 6) si el detector elegido sigue ganando: si el otro modelo
+   detecta más con la misma regla, cambiar `detector.modelo` en `hiperparametros.yaml` (`bosque` o
+   `arboles`) y correr `python herramientas/reentrenar.py 07`.
 
 ## Instalación
 
@@ -227,7 +230,7 @@ python herramientas/correr_notebooks.py 06 07     # solo algunos
 | 04 | clima | Lluvia de la zona (IMN, estación ITCR San Carlos), su efecto en turbidez, cloro, pH y temperatura, cuánto aportaría un pronóstico de lluvia y qué pronóstico usar |
 | 05 | eventos | Cómo se ven los eventos (también las fugas) y las fallas en los datos; dónde van los 10 sensores del sistema; vector de etiquetas |
 | 06 | modelo_pronostico | Modelo de pronóstico a 24 h (árboles), qué información de clima usar y evaluación contra la meta |
-| 07 | detector_eventos | Detector de eventos: alarmas, tipo de evento y falsas alarmas; comparación con Random Forest e Isolation Forest |
+| 07 | detector_eventos | Detector de eventos (Random Forest): alarmas, tipo de evento y falsas alarmas; comparación con HistGradientBoosting e Isolation Forest |
 | 08 | red_neuronal | Red LSTM (TensorFlow/Keras), comparación con los árboles y modelo final de pronóstico |
 | 09 | anticipacion_eventos | Probabilidad de que empiece un evento en las próximas 24 h (lluvia, deterioro en la fuente, baja presión): árboles, bosque aleatorio, Isolation Forest y LSTM; anticipación y avisos falsos; horizonte de 48 h; llegada de los eventos de la fuente a cada sensor |
 | 10 | fugas | Fugas con el caudal de la fuente y la presión de los sensores: regresión de la operación normal y línea base de la semana; Random Forest, SVM y Autoencoder (percentil 95); tramo de la fuga entre dos sensores (RF-002.2) |

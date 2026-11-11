@@ -19,7 +19,7 @@ curso en la red (evento_red > 0) y ninguno por empezar. Ahí manda el detector; 
 anticipación no tiene sentido mientras el evento ya está pasando.
 
 Modelos que se comparan (notebook 09), uno binario por tipo de evento salvo el Isolation Forest:
-  - árboles: HistGradientBoostingClassifier (el mismo tipo de modelo que el detector);
+  - árboles: HistGradientBoostingClassifier;
   - bosque aleatorio: RandomForestClassifier;
   - Isolation Forest: sin etiquetas, aprende cómo es la operación normal y marca lo raro;
   - LSTM: secuencias de las últimas horas, una salida por tipo (Keras, opcional).

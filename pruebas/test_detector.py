@@ -60,27 +60,34 @@ def test_turbidez_en_la_fuente_se_ve_en_toda_la_red(hd):
     assert d.loc[hd.index[20], "red_sensores_desviados_TURB"] == 0
 
 
-def test_entrenar_y_probabilidades(hd):
+@pytest.mark.parametrize("modelo", ["bosque", "arboles"])
+def test_entrenar_y_probabilidades(hd, modelo):
     tabla, _ = detector.tabla(hd)
     cols = detector.columnas_entrada(tabla)
     assert not {"fecha", "particion", "nodo", "clase"} & set(cols)
-    mod = detector.entrenar(tabla, cols, tabla["particion"] == "entrenamiento")
-    p, tipo = detector.probabilidades(mod, tabla, cols)
+    mod = detector.entrenar(tabla, cols, tabla["particion"] == "entrenamiento", modelo=modelo)
+    assert detector.nombre(mod) == detector.NOMBRES[modelo] and detector.arboles(mod) > 0
+    p, tipo = detector.probabilidades(mod, tabla, cols)        # el bosque acepta las variables con vacíos
     assert ((p >= 0) & (p <= 1)).all()
     assert 0 not in set(tipo)                               # el tipo sugerido nunca es "normal"
     evento = tabla["clase"].values == 1                        # el tipo que vio al entrenar
     assert p[evento].mean() > p[~evento].mean()
 
 
-def test_bosque_e_isolation_forest_para_comparar(hd):
+def test_el_detector_es_el_del_yaml(hd):
+    tabla, _ = detector.tabla(hd)
+    cols = detector.columnas_entrada(tabla)
+    mod = detector.entrenar(tabla, cols, tabla["particion"] == "entrenamiento")
+    assert detector.nombre(mod) == detector.NOMBRES[detector.MODELO]
+    with pytest.raises(ValueError):
+        detector.entrenar(tabla, cols, tabla["particion"] == "entrenamiento", modelo="otro")
+
+
+def test_isolation_forest_para_comparar(hd):
     tabla, _ = detector.tabla(hd)
     cols = detector.columnas_entrada(tabla)
     entr = (tabla["particion"] == "entrenamiento").values
     evento = tabla["clase"].values == 1
-    rf = detector.entrenar_bosque(tabla, cols, entr)
-    p, tipo = detector.probabilidades(rf, tabla, cols)          # acepta las variables con vacíos
-    assert ((p >= 0) & (p <= 1)).all() and 0 not in set(tipo)
-    assert p[evento].mean() > p[~evento].mean()
     iso = detector.entrenar_isolation(tabla, cols, entr)
     p_iso, tipo_iso = detector.probabilidades(iso, tabla, cols)
     assert ((p_iso >= 0) & (p_iso <= 1)).all() and set(tipo_iso) == {0}   # no dice el tipo

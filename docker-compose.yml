@@ -1,0 +1,39 @@
+# Notebooks, reentrenamiento y validación cruzada en Docker (RF-001.4, RF-002.3, RNF-008), desde
+# esta carpeta:
+#
+#     docker compose run --rm validacion      validación cruzada y búsqueda (RF-002.3 y RF-002.4)
+#     docker compose run --rm reentrenar      vuelve a entrenar los modelos (notebooks 06 a 10)
+#     docker compose run --rm notebooks       corre todos los notebooks en orden y los guarda
+#     docker compose up jupyter               Jupyter en http://127.0.0.1:8888 (la clave sale en la consola)
+#
+# Los resultados quedan en esta carpeta (montada en /modelo): notebooks, figuras, modelos/, docs/,
+# mlflow.db y mlartifacts/. Los datos del simulador se leen de ../Simulador_sensor/datos/dtown/final;
+# otra carpeta: DATOS_SENSORES_CARPETA en un .env de esta carpeta (o en el entorno).
+
+x-modelo: &modelo
+  build: .
+  image: calidad-agua-modelo
+  volumes:
+    - .:/modelo
+    - ${DATOS_SENSORES_CARPETA:-../Simulador_sensor/datos/dtown/final}:/datos:ro
+  environment:
+    DATOS_SENSORES: /datos
+
+services:
+  validacion:
+    <<: *modelo
+    command: ["python", "herramientas/validacion_cruzada.py"]
+
+  reentrenar:
+    <<: *modelo
+    command: ["python", "herramientas/reentrenar.py"]
+
+  notebooks:
+    <<: *modelo
+    command: ["python", "herramientas/correr_notebooks.py"]
+
+  jupyter:
+    <<: *modelo
+    command: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root",
+              "--ServerApp.root_dir=/modelo/notebooks"]
+    ports: ["127.0.0.1:8888:8888"]

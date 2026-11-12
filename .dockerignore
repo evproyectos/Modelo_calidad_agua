@@ -1,0 +1,6 @@
+# solo hace falta el paquete para construir la imagen; lo demás se monta al correr
+*
+!pyproject.toml
+!README.md
+!calidad_agua/
+calidad_agua/__pycache__

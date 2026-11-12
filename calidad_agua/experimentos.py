@@ -22,12 +22,19 @@ Para verlos, desde la raíz del proyecto:
 (`--workers 1` hace falta en Windows: con varios procesos el servidor no arranca.)
 
 Con la variable de entorno MLFLOW_TRACKING_URI se puede usar otro servidor de MLflow.
+
+Los experimentos guardan la carpeta de sus archivos como ruta absoluta de la máquina donde se
+crearon (p. ej. file:///D:/Practica_Profesional/Modelo_calidad_agua/mlartifacts/...). Si esa
+carpeta no existe aquí (en Docker, o en otra máquina con la misma base), los archivos de la corrida
+se copian a la carpeta equivalente de este proyecto, mlartifacts/<experimento>/<corrida>/, que es
+la misma carpeta montada: así no se pierden y se ven en la interfaz de MLflow de la otra máquina.
 """
 
 import hashlib
 import math
 import os
 import platform
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -35,6 +42,7 @@ import unicodedata
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 from . import carga, clima
 
@@ -115,6 +123,23 @@ def aplanar(d, prefijo=""):
 
 
 # ---------------------------------------------------------------------------- registro
+def destino_local(artifact_uri, artefactos=None):
+    """
+    Carpeta de este proyecto donde van los archivos de una corrida cuyo `artifact_uri` apunta a una
+    carpeta mlartifacts/ que no existe en esta máquina (creada en otra). None si la ruta sirve tal
+    cual o no es una carpeta local de mlartifacts.
+    """
+    artefactos = Path(artefactos or ARTEFACTOS)
+    u = urlparse(artifact_uri or "")
+    ruta = unquote(u.path)
+    if u.scheme != "file" or "/mlartifacts/" not in ruta:
+        return None
+    raiz, resto = ruta.split("/mlartifacts/", 1)
+    if os.path.isdir(raiz + "/mlartifacts") or (os.name == "nt" and os.path.isdir(raiz.lstrip("/") + "/mlartifacts")):
+        return None
+    return artefactos / resto
+
+
 class Registro:
     """Lo que se puede registrar durante una corrida (y en sus corridas hijas)."""
 
@@ -148,7 +173,7 @@ class Registro:
         with tempfile.TemporaryDirectory() as d:
             ruta = Path(d) / f"{clave(nombre)}.csv"
             df.to_csv(ruta, encoding="utf-8-sig")
-            self.mlflow.log_artifact(str(ruta), artifact_path="tablas", run_id=self.id)
+            self._subir(ruta, "tablas")
 
     def metricas_tabla(self, df, prefijo):
         """Cada celda numérica de una tabla de resultados: '<prefijo>.<fila>.<columna>'."""
@@ -160,7 +185,10 @@ class Registro:
         self.metricas(valores, prefijo)
 
     def figura(self, fig, nombre):
-        self.mlflow.MlflowClient().log_figure(self.id, fig, f"figuras/{nombre}.png")
+        with tempfile.TemporaryDirectory() as d:
+            ruta = Path(d) / f"{nombre}.png"
+            fig.savefig(ruta)
+            self._subir(ruta, "figuras")
 
     def figuras_guardadas(self, prefijo):
         """Las figuras ya exportadas a figuras/ cuyo nombre empieza con `prefijo` (p. ej. '06_')."""
@@ -168,7 +196,15 @@ class Registro:
             self.archivo(f, "figuras")
 
     def archivo(self, ruta, carpeta="modelos"):
-        self.mlflow.log_artifact(str(ruta), artifact_path=carpeta, run_id=self.id)
+        self._subir(ruta, carpeta)
+
+    def _subir(self, ruta, carpeta):
+        destino = destino_local(self.run.info.artifact_uri)
+        if destino is None:
+            self.mlflow.log_artifact(str(ruta), artifact_path=carpeta, run_id=self.id)
+        else:                                    # la carpeta del experimento es de otra máquina
+            (destino / carpeta).mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ruta, destino / carpeta / Path(ruta).name)
 
     def referencia(self):
         """Lo que se guarda junto al modelo para encontrar su experimento (lo muestra /health)."""

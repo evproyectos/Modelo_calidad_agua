@@ -142,3 +142,15 @@ def test_registro_propio_en_la_carpeta_del_proyecto(datos, tmp_path, monkeypatch
     exp = mlflow.MlflowClient(f"sqlite:///{(tmp_path / 'mlflow.db').as_posix()}").get_experiment_by_name("propio")
     assert exp.artifact_location == (tmp_path / "mlartifacts" / "propio").as_uri()
     monkeypatch.delenv("MLFLOW_TRACKING_URI", raising=False)        # set_tracking_uri la define
+
+
+def test_archivos_de_corridas_creadas_en_otra_maquina(tmp_path):
+    """La carpeta de un experimento creado en Windows no existe en Docker: va a mlartifacts/ local."""
+    artefactos = tmp_path / "mlartifacts"
+    artefactos.mkdir()
+    otra = "file:///D:/Practica_Profesional/Modelo_calidad_agua/mlartifacts/fugas/abc123/artifacts"
+    assert experimentos.destino_local(otra, artefactos) == artefactos / "fugas" / "abc123" / "artifacts"
+    aqui = (artefactos / "fugas" / "abc123" / "artifacts").as_uri()
+    assert experimentos.destino_local(aqui, artefactos) is None           # existe: se usa tal cual
+    assert experimentos.destino_local("mlflow-artifacts:/1/abc/artifacts", artefactos) is None
+    assert experimentos.destino_local("file:///tmp/otra/cosa", artefactos) is None

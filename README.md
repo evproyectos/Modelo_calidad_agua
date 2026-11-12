@@ -83,9 +83,11 @@ modelos/      modelos entrenados (se generan con los notebooks 06 a 10; no se ve
 artefactos.json  release de GitHub con los modelos y la historia de MLflow, y la huella de cada archivo
 herramientas/ correr_notebooks.py: corre todos los notebooks en orden y los guarda;
               reentrenar.py: vuelve a entrenar todos los modelos;
+              validacion_cruzada.py: validación cruzada y búsqueda de hiperparámetros;
               publicar_modelos.py: empaqueta los modelos y MLflow para el release;
               dataset_maestro.py: exporta el dataset maestro preprocesado (Parquet y CSV)
-docs/         esquema del dataset (docs/datos) y variables de los modelos (docs/modelos)
+docs/         esquema del dataset (docs/datos), variables de los modelos y validación cruzada (docs/modelos)
+Dockerfile, docker-compose.yml   notebooks, reentrenamiento y validación en Docker
 registros/    registro del preprocesamiento (lo escriben los notebooks; no se versiona)
 ```
 
@@ -227,6 +229,39 @@ mlflow ui --backend-store-uri sqlite:///mlflow.db --workers 1
 
 y abrir **http://127.0.0.1:5000**. Experimentos: `pronostico_24h` (notebooks 06 y 08),
 `detector_eventos` (notebook 07), `anticipacion_eventos` (notebook 09) y `fugas` (notebook 10).
+
+## Validación cruzada y búsqueda de hiperparámetros (RF-002.3 y RF-002.4)
+
+```
+python herramientas/validacion_cruzada.py
+```
+
+Para el detector, la anticipación y las fugas: **Time Series Split con k = 5** sobre entrenamiento y
+validación (cada pliegue entrena solo con el pasado, con 24 h de separación), F1 por evento por
+pliegue (media y desviación), curva de aprendizaje, sensibilidad a los hiperparámetros principales
+y una **búsqueda al azar** (Random Search) comparada con el modelo final con las mismas reglas.
+Deja el reporte en `docs/modelos/validacion-cruzada.md` y una corrida por modelo en MLflow, en el
+experimento de ese modelo, con una corrida hija por configuración (hiperparámetros, F1 y duración).
+Tarda alrededor de hora y media; `--reanudar` sigue donde quedó, y se puede pedir un solo modelo
+(`python herramientas/validacion_cruzada.py fugas`). Pliegues, grillas y semilla:
+`hiperparametros.yaml`, sección `validacion`. Si la búsqueda encuentra algo mejor por 2 puntos o
+más, se copia al YAML y se reentrena.
+
+## Docker
+
+El mismo entorno, sin instalar Python, desde esta carpeta (con los datos del simulador en
+`../Simulador_sensor/datos/dtown/final`, o en la carpeta que diga `DATOS_SENSORES_CARPETA` en un
+`.env`):
+
+```
+docker compose run --rm validacion      validación cruzada y búsqueda
+docker compose run --rm reentrenar      vuelve a entrenar los modelos (notebooks 06 a 10)
+docker compose run --rm notebooks       corre todos los notebooks en orden y los guarda
+docker compose up jupyter               Jupyter en http://127.0.0.1:8888 (la clave sale en la consola)
+```
+
+Todo queda en esta carpeta, igual que sin Docker. La imagen tiene las mismas versiones de las
+librerías con las que se entrenaron los modelos.
 
 ## Pronóstico de lluvia
 

@@ -185,13 +185,14 @@ def _por_tipo(crear, X, y):
     return {k: crear().fit(X, (y == k).astype(int)) if (y == k).any() else None for k in CODIGOS}
 
 
-def entrenar_arboles(X, y):
-    return _por_tipo(lambda: HistGradientBoostingClassifier(**HIPERPARAMETROS["arboles"]), X, y)
+def entrenar_arboles(X, y, params=None):
+    return _por_tipo(lambda: HistGradientBoostingClassifier(**{**HIPERPARAMETROS["arboles"], **(params or {})}), X, y)
 
 
-def entrenar_bosque(X, y):
+def entrenar_bosque(X, y, params=None):
     # el bosque de scikit-learn no acepta vacíos en todas las versiones
-    return _por_tipo(lambda: RandomForestClassifier(**HIPERPARAMETROS["bosque"]), X.fillna(-999), y)
+    return _por_tipo(lambda: RandomForestClassifier(**{**HIPERPARAMETROS["bosque"], **(params or {})}),
+                     X.fillna(-999), y)
 
 
 def entrenar_isolation(X_normal):

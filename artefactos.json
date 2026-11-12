@@ -1,19 +1,19 @@
 {
   "repositorio": "evproyectos/Modelo_calidad_agua",
-  "release": "modelos-2026-11-10",
-  "url": "https://github.com/evproyectos/Modelo_calidad_agua/releases/download/modelos-2026-11-10",
+  "release": "modelos-2026-11-11",
+  "url": "https://github.com/evproyectos/Modelo_calidad_agua/releases/download/modelos-2026-11-11",
   "archivos": [
     {
       "nombre": "modelos.zip",
       "destino": "modelos",
       "obligatorio": true,
       "contenido": {
-        "anticipacion_24h.joblib": "975ee2255ce25af408d9a59ed627c3494059646b72b6e13dd0ae76621f277cad",
+        "anticipacion_24h.joblib": "50ff53fbe972087dbbe2d009ddafbe6cd6b39c597d805d95c6950ec575e361d6",
         "anticipacion_lstm_0.keras": "e27abe0581bd24a5c6a15b0e39636b70e2489e7918844e841382114d0cc6c283",
         "anticipacion_lstm_1.keras": "e164d7a0cf1df78b800b9d0908edf5816d702a7349cd235678f8a9e10d9a5a95",
         "anticipacion_lstm_2.keras": "b5dbbb1b8c0cfd542a2764c656476004211181a511cc9a5f2b1b1eb655e5e371",
         "detector_eventos.joblib": "bf30dcc8591f657fc6f8738d2209f92b3e981dcef13367f03c793882ef1697dd",
-        "fugas.joblib": "fabfb9dfaaaded32760a05bd3ee7d04c65ddc0d1b5bbecfcf7336305339e46d4",
+        "fugas.joblib": "efe253daf7b5e0cf01e2618fd94b675845a8b4cd06987c86bfd16cc2b7ea8911",
         "lstm_24h_semilla0.keras": "3724ab4384da06b529a388b508e8ec26bff3467371de05ac843109dff4907dce",
         "lstm_24h_semilla1.keras": "5da1cf249a89b2ee6015684386a2b722745e67b716536cc1ecf2da3f5d1779b8",
         "lstm_24h_semilla2.keras": "1ca7999c552d38f26b8ce3d5d68533aabef40121426f8a73d70141920c132dc1",
@@ -21,8 +21,8 @@
         "pronostico_24h_final.joblib": "6f70969005f3b7b5ce460c8e1a3266b1bf1a4350393529d5944e1015fe5edb65",
         "referencia_deriva.joblib": "baf2e7312263ddd2aad4191331c5fcfab3ab76d1883a7128a63b08a10dfb7455"
       },
-      "sha256": "eb3b458b9fbc5dd25e722dac10ced8c6a0e37bc6f52ad78a8014d8bf32d2eafe",
-      "bytes": 53751869
+      "sha256": "00fd72947f9d1c56ac284529a754f60bd26f725a3b5f8abcd9cb85a3d346f9a4",
+      "bytes": 70639229
     },
     {
       "nombre": "mlflow.zip",
@@ -31,8 +31,8 @@
       "contenido": {
         "mlflow.db": null
       },
-      "sha256": "404edffa32ae242d194fcd51544defbd160f217bc33b0f8dbef6610e316186ca",
-      "bytes": 100676079
+      "sha256": "5bdaace0401be60ec429a741b6a48a5d23b53b13f92dc77c738d0a2c47f4d407",
+      "bytes": 148365442
     }
   ]
 }

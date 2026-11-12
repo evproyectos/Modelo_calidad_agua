@@ -95,10 +95,11 @@ anticipacion:                  # anticipacion.py · notebook 09 · ¿empieza un 
     early_stopping: true
     validation_fraction: 0.1
     random_state: 0
-  bosque:                      # RandomForestClassifier
-    n_estimators: 300
-    min_samples_leaf: 10
-    max_features: sqrt
+  bosque:                      # RandomForestClassifier · elegido con la búsqueda al azar (RF-002.4,
+    n_estimators: 500          # docs/modelos/validacion-cruzada.md): +6,7 puntos de F1 en los pliegues
+    min_samples_leaf: 3        # contra 300 árboles, hojas de 10 y max_features sqrt
+    max_features: 0.33
+    max_depth: null
     class_weight: balanced_subsample
     n_jobs: -1
     random_state: 0
@@ -121,6 +122,43 @@ anticipacion:                  # anticipacion.py · notebook 09 · ¿empieza un 
     max_falsos_por_semana: 2.0 # en total, repartido entre los tipos: un aviso anticipado (amarillo)
                                # cuesta menos que una alarma del detector (rojo), que tiene tope 1
 
+validacion:                    # validacion.py · herramientas/validacion_cruzada.py (RF-002.3 y RF-002.4)
+  pliegues: 5                  # Time Series Split sobre entrenamiento + validación (sep 2024 – abr 2026)
+  separacion_h: 24             # horas entre el fin del entrenamiento y el inicio de cada pliegue
+  fracciones: [0.2, 0.4, 0.6, 0.8, 1.0]   # curva de aprendizaje: parte más reciente del entrenamiento
+  busqueda: 10                 # Random Search: configuraciones al azar por modelo (más la del modelo final)
+  semilla: 0
+  detector:                    # Random Forest (detector.bosque)
+    sensibilidad:              # un hiperparámetro a la vez, el resto como en el modelo final
+      n_estimators: [50, 100, 200, 400]
+      min_samples_leaf: [5, 10, 20, 40, 80]
+      max_features: [sqrt, 0.25, 0.5]
+    espacio:                   # combinaciones para la búsqueda al azar
+      n_estimators: [100, 200, 300]
+      min_samples_leaf: [5, 10, 20, 40, 80]
+      max_features: [sqrt, 0.2, 0.33]
+      max_depth: [null, 15, 30]
+      class_weight: [balanced, balanced_subsample]
+  anticipacion:                # Random Forest por tipo de evento (anticipacion.bosque)
+    sensibilidad:
+      n_estimators: [100, 300, 500]
+      min_samples_leaf: [3, 5, 10, 20, 40]
+      max_features: [sqrt, 0.25, 0.5]
+    espacio:
+      n_estimators: [100, 300, 500]
+      min_samples_leaf: [3, 5, 10, 20, 40]
+      max_features: [sqrt, 0.2, 0.33]
+      max_depth: [null, 10, 20]
+      class_weight: [balanced, balanced_subsample]
+  fugas:                       # SVM (fugas.svm)
+    sensibilidad:
+      C: [0.1, 0.3, 1.0, 3.0, 10.0]
+      gamma: [scale, 0.001, 0.003, 0.01, 0.03]
+    espacio:
+      C: [0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0]
+      gamma: [scale, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1]
+      class_weight: [balanced, null]
+
 fugas:                         # fugas.py · notebook 10 (RF-002.2)
   bosque:                      # RandomForestClassifier: ¿hay fuga en esta hora?
     n_estimators: 300
@@ -129,11 +167,11 @@ fugas:                         # fugas.py · notebook 10 (RF-002.2)
     class_weight: balanced_subsample
     n_jobs: -1
     random_state: 0
-  svm:                         # SVC con escalado (probabilidades de Platt)
-    C: 1.0
-    kernel: rbf
-    gamma: scale
-    class_weight: balanced
+  svm:                         # SVC con escalado (probabilidades de Platt) · elegido con la búsqueda al
+    C: 10.0                    # azar (RF-002.4, docs/modelos/validacion-cruzada.md): +11,5 puntos de F1
+    kernel: rbf                # en los pliegues contra C 1, gamma scale y clases balanceadas
+    gamma: 0.001
+    class_weight: null
     random_state: 0
   autoencoder:                 # Keras, solo con operación normal
     capas: [32, 16, 6]         # codificador; el decodificador es el espejo

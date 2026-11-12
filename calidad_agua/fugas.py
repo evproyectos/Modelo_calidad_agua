@@ -132,13 +132,14 @@ def tabla(h, normal_modelos):
 
 
 # ---------------------------------------------------------------------------- modelos
-def entrenar_bosque(X, y):
-    return RandomForestClassifier(**HIPERPARAMETROS["bosque"]).fit(X.fillna(VACIO), y)
+def entrenar_bosque(X, y, params=None):
+    return RandomForestClassifier(**{**HIPERPARAMETROS["bosque"], **(params or {})}).fit(X.fillna(VACIO), y)
 
 
-def entrenar_svm(X, y):
+def entrenar_svm(X, y, params=None):
     """SVM con escalado; la probabilidad sale de una calibración sigmoide (Platt)."""
-    svm = CalibratedClassifierCV(SVC(**HIPERPARAMETROS["svm"]), method="sigmoid", cv=3, ensemble=False)
+    svm = CalibratedClassifierCV(SVC(**{**HIPERPARAMETROS["svm"], **(params or {})}), method="sigmoid", cv=3,
+                                 ensemble=False)
     return make_pipeline(StandardScaler(), svm).fit(X.fillna(VACIO), y)
 
 

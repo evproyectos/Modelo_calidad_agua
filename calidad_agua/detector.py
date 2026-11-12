@@ -154,22 +154,26 @@ def columnas_entrada(tabla_):
     return [c for c in tabla_.columns if c not in {"fecha", "particion", "nodo", "clase"}]
 
 
-def entrenar(tabla_, columnas, filas, modelo=None):
-    """El detector: el modelo de `detector.modelo` en hiperparametros.yaml (o el que se pida)."""
+def entrenar(tabla_, columnas, filas, modelo=None, params=None):
+    """
+    El detector: el modelo de `detector.modelo` en hiperparametros.yaml (o el que se pida).
+    `params` cambia algunos hiperparámetros del YAML (validación cruzada y búsqueda, RF-002.3/4).
+    """
     modelo = modelo or MODELO
     if modelo not in NOMBRES:
         raise ValueError(f"detector.modelo debe ser uno de {list(NOMBRES)}, no {modelo!r}")
-    return (entrenar_bosque if modelo == "bosque" else entrenar_arboles)(tabla_, columnas, filas)
+    return (entrenar_bosque if modelo == "bosque" else entrenar_arboles)(tabla_, columnas, filas, params)
 
 
-def entrenar_bosque(tabla_, columnas, filas):
-    mod = RandomForestClassifier(**HIPERPARAMETROS["bosque"])
+def entrenar_bosque(tabla_, columnas, filas, params=None):
+    mod = RandomForestClassifier(**{**HIPERPARAMETROS["bosque"], **(params or {})})
     mod.fit(entrada(mod, tabla_.loc[filas, columnas]), tabla_.loc[filas, "clase"])
     return mod
 
 
-def entrenar_arboles(tabla_, columnas, filas):
-    mod = HistGradientBoostingClassifier(categorical_features=[columnas.index("sensor")], **HIPERPARAMETROS["arboles"])
+def entrenar_arboles(tabla_, columnas, filas, params=None):
+    mod = HistGradientBoostingClassifier(categorical_features=[columnas.index("sensor")],
+                                         **{**HIPERPARAMETROS["arboles"], **(params or {})})
     mod.fit(tabla_.loc[filas, columnas], tabla_.loc[filas, "clase"])
     return mod
 

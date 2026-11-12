@@ -18,6 +18,7 @@ Módulos:
   red_neuronal  pronóstico con LSTM (TensorFlow/Keras)
   detector      detector de eventos
   anticipacion  probabilidad de que empiece un evento en las próximas 24 h
+  validacion    validación cruzada temporal y búsqueda de hiperparámetros (RF-002.3 y RF-002.4)
   eventos       episodios a partir de etiquetas
   graficos      estilo común de las figuras
 """

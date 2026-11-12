@@ -73,7 +73,8 @@ particiones, `distancias_sensores.csv` da la distancia por tubería de cada nodo
 calidad_agua/ paquete de Python con el código compartido: carga, limpieza, variables,
               pronóstico de lluvia, modelos (árboles, LSTM, detector), meta, figuras y
               registro de experimentos; hiperparametros.yaml tiene los hiperparámetros
-clima/        pronósticos de lluvia pasados de Open-Meteo para la zona (se versionan)
+clima/        pronósticos de lluvia pasados de Open-Meteo para la zona y su lluvia horaria
+              (segunda fuente, RNF-009); se versionan
 notebooks/    EDA y modelos, numerados en el orden de lectura
 pruebas/      pruebas unitarias (test_*.py) y la prueba de variables en vivo
 .github/      integración continua en GitHub (estilo, pruebas, cobertura y secretos)
@@ -84,9 +85,11 @@ artefactos.json  release de GitHub con los modelos y la historia de MLflow, y la
 herramientas/ correr_notebooks.py: corre todos los notebooks en orden y los guarda;
               reentrenar.py: vuelve a entrenar todos los modelos;
               validacion_cruzada.py: validación cruzada y búsqueda de hiperparámetros;
+              fuente_lluvia.py: los modelos con la lluvia de Open-Meteo en vez de la del IMN;
               publicar_modelos.py: empaqueta los modelos y MLflow para el release;
               dataset_maestro.py: exporta el dataset maestro preprocesado (Parquet y CSV)
-docs/         esquema del dataset (docs/datos), variables de los modelos y validación cruzada (docs/modelos)
+docs/         esquema del dataset (docs/datos); variables de los modelos, validación cruzada y
+              segunda fuente de lluvia (docs/modelos)
 Dockerfile, docker-compose.yml   notebooks, reentrenamiento y validación en Docker
 registros/    registro del preprocesamiento (lo escriben los notebooks; no se versiona)
 ```
@@ -246,6 +249,22 @@ Tarda alrededor de hora y media; `--reanudar` sigue donde quedó, y se puede ped
 (`python herramientas/validacion_cruzada.py fugas`). Pliegues, grillas y semilla:
 `hiperparametros.yaml`, sección `validacion`. Si la búsqueda encuentra algo mejor por 2 puntos o
 más, se copia al YAML y se reentrena.
+
+## Segunda fuente de lluvia (RNF-009)
+
+```
+python herramientas/fuente_lluvia.py
+```
+
+Los sensores de la red no miden lluvia: la del dataset es la de la estación del IMN, que mete el
+simulador. En operación, el servicio de monitoreo la saca de una fuente elegida con
+`FUENTE_LLUVIA` (adaptadores en Monitoreo_calidad_agua), y la que se puede consultar en vivo es
+Open-Meteo. Este script compara la lluvia de Open-Meteo (`clima/lluvia_open_meteo_historica.csv`,
+Historical Forecast API) con la de la estación y prueba los tres modelos que dan alarmas con ella:
+sin reentrenar y reentrenados. No modifica ningún módulo de `calidad_agua/`: solo cambia la columna
+`lluvia_mm_h` al cargar los datos. Deja el reporte en `docs/modelos/fuente-lluvia.md` (unos 20 min).
+En resumen: el detector y las fugas no dependen de la fuente; la anticipación sí (usa la lluvia de
+30 días), así que antes de operar con Open-Meteo hay que reentrenarla con esa lluvia.
 
 ## Docker
 

@@ -1,0 +1,241 @@
+{
+ "serie": "ecmwf_ifs025",
+ "concordancia": {
+  "best_match": {
+   "horas": 17520,
+   "total_imn_mm": 9175.7998046875,
+   "total_om_mm": 6360.200000000001,
+   "razon_total": 0.6931493859261034,
+   "r_horaria": 0.15408905495567177,
+   "r_diaria": 0.39589072156487015,
+   "r_24h": 0.4227324239630428,
+   "r_30d": 0.8291390396294247,
+   "pod_hora": 0.30849889624724064,
+   "far_hora": 0.6785508913168488,
+   "pod_dia": 0.5785123966942148,
+   "far_dia": 0.35779816513761464,
+   "faltantes": 0
+  },
+  "ecmwf_ifs025": {
+   "horas": 17520,
+   "total_imn_mm": 9175.7998046875,
+   "total_om_mm": 7443.5,
+   "razon_total": 0.8112099390177904,
+   "r_horaria": 0.21513513905082388,
+   "r_diaria": 0.4896370389704805,
+   "r_24h": 0.5131115007940497,
+   "r_30d": 0.8872780620851416,
+   "pod_hora": 0.32671081677704195,
+   "far_hora": 0.7119221411192214,
+   "pod_dia": 0.6818181818181818,
+   "far_dia": 0.37262357414448666,
+   "faltantes": 0
+  },
+  "gfs_seamless": {
+   "horas": 17520,
+   "total_imn_mm": 9175.7998046875,
+   "total_om_mm": 5394.0,
+   "razon_total": 0.5878506631372287,
+   "r_horaria": 0.13051815411404136,
+   "r_diaria": 0.358941185292279,
+   "r_24h": 0.34706887653608665,
+   "r_30d": 0.7465720859367159,
+   "pod_hora": 0.24061810154525387,
+   "far_hora": 0.7387657279808268,
+   "pod_dia": 0.4132231404958678,
+   "far_dia": 0.4285714285714286,
+   "faltantes": 0
+  },
+  "icon_seamless": {
+   "horas": 17520,
+   "total_imn_mm": 9175.7998046875,
+   "total_om_mm": 3302.5000000000005,
+   "razon_total": 0.3599141295904149,
+   "r_horaria": 0.18905819121089906,
+   "r_diaria": 0.33063026504410536,
+   "r_24h": 0.3572745281649967,
+   "r_30d": 0.7573191996910714,
+   "pod_hora": 0.16445916114790288,
+   "far_hora": 0.7069813176007866,
+   "pod_dia": 0.26859504132231404,
+   "far_dia": 0.40909090909090906,
+   "faltantes": 0
+  },
+  "gem_seamless": {
+   "horas": 17520,
+   "total_imn_mm": 9175.7998046875,
+   "total_om_mm": 12789.599999999999,
+   "razon_total": 1.3938403487689839,
+   "r_horaria": 0.13561092643221684,
+   "r_diaria": 0.3853420073247617,
+   "r_24h": 0.4055253001882129,
+   "r_30d": 0.7604137883501453,
+   "pod_hora": 0.5182119205298014,
+   "far_hora": 0.7587978422810172,
+   "pod_dia": 0.7975206611570248,
+   "far_dia": 0.5113924050632912,
+   "faltantes": 0
+  },
+  "promedio": {
+   "horas": 17520,
+   "total_imn_mm": 9175.7998046875,
+   "total_om_mm": 7232.4,
+   "razon_total": 0.7882037701286044,
+   "r_horaria": 0.2315546948164768,
+   "r_diaria": 0.4936902198373389,
+   "r_24h": 0.5116220346580238,
+   "r_30d": 0.8712173007843222,
+   "pod_hora": 0.3631346578366446,
+   "far_hora": 0.6830443159922929,
+   "pod_dia": 0.6776859504132231,
+   "far_dia": 0.4057971014492754,
+   "faltantes": 0
+  }
+ },
+ "modelos": {
+  "detector": {
+   "IMN (como hoy)": {
+    "eventos": 25,
+    "detectados": 18,
+    "alarmas": 40,
+    "falsas": 0,
+    "falsas_por_semana": 0.0,
+    "precision": 1.0,
+    "sensibilidad": 0.72,
+    "f1": 0.8372093023255813,
+    "punto": "0.7 / 3 h"
+   },
+   "cambio en vivo (entrenados con IMN)": {
+    "eventos": 25,
+    "detectados": 18,
+    "alarmas": 39,
+    "falsas": 0,
+    "falsas_por_semana": 0.0,
+    "precision": 1.0,
+    "sensibilidad": 0.72,
+    "f1": 0.8372093023255813,
+    "punto": "0.7 / 3 h",
+    "cambio_prob_medio": 0.014361565931609489,
+    "cambio_prob_p99": 0.11538308550661687
+   },
+   "IMN, punto elegido otra vez": {
+    "eventos": 25,
+    "detectados": 18,
+    "alarmas": 40,
+    "falsas": 0,
+    "falsas_por_semana": 0.0,
+    "precision": 1.0,
+    "sensibilidad": 0.72,
+    "f1": 0.8372093023255813,
+    "punto": "0.7 / 3 h"
+   },
+   "reentrenados con Open-Meteo": {
+    "eventos": 25,
+    "detectados": 18,
+    "alarmas": 46,
+    "falsas": 3,
+    "falsas_por_semana": 0.22114962702939886,
+    "precision": 0.9347826086956522,
+    "sensibilidad": 0.72,
+    "f1": 0.8134524435102469,
+    "punto": "0.7 / 2 h"
+   }
+  },
+  "anticipacion": {
+   "IMN (como hoy)": {
+    "eventos": 27,
+    "detectados": 10,
+    "alarmas": 11,
+    "falsas": 2,
+    "falsas_por_semana": 0.3040723981900452,
+    "precision": 0.8181818181818182,
+    "sensibilidad": 0.37037037037037035,
+    "f1": 0.509915014164306,
+    "punto": "tipo 1: 0.5 / 3 h; tipo 2: 0.3 / 3 h; tipo 3: 0.5 / 1 h; tipo 4: 0.2 / 2 h; tipo 5: 0.6 / 2 h"
+   },
+   "cambio en vivo (entrenados con IMN)": {
+    "eventos": 27,
+    "detectados": 3,
+    "alarmas": 3,
+    "falsas": 0,
+    "falsas_por_semana": 0.0,
+    "precision": 1.0,
+    "sensibilidad": 0.1111111111111111,
+    "f1": 0.19999999999999998,
+    "punto": "tipo 1: 0.5 / 3 h; tipo 2: 0.3 / 3 h; tipo 3: 0.5 / 1 h; tipo 4: 0.2 / 2 h; tipo 5: 0.6 / 2 h",
+    "cambio_prob_medio": 0.03236596119980902,
+    "cambio_prob_p99": 0.2969066932154978
+   },
+   "IMN, punto elegido otra vez": {
+    "eventos": 27,
+    "detectados": 9,
+    "alarmas": 14,
+    "falsas": 4,
+    "falsas_por_semana": 0.6081447963800904,
+    "precision": 0.7142857142857143,
+    "sensibilidad": 0.3333333333333333,
+    "f1": 0.4545454545454545,
+    "punto": "tipo 1: 0.5 / 1 h; tipo 2: 0.3 / 2 h; tipo 3: 0.5 / 1 h; tipo 4: 0.3 / 3 h; tipo 5: 0.5 / 3 h"
+   },
+   "reentrenados con Open-Meteo": {
+    "eventos": 27,
+    "detectados": 7,
+    "alarmas": 10,
+    "falsas": 3,
+    "falsas_por_semana": 0.45610859728506786,
+    "precision": 0.7,
+    "sensibilidad": 0.25925925925925924,
+    "f1": 0.37837837837837834,
+    "punto": "tipo 1: 0.5 / 3 h; tipo 2: 0.4 / 1 h; tipo 3: 0.5 / 2 h; tipo 4: 0.4 / 1 h; tipo 5: 0.5 / 3 h"
+   }
+  },
+  "fugas": {
+   "IMN (como hoy)": {
+    "eventos": 9,
+    "detectados": 4,
+    "alarmas": 6,
+    "falsas": 0,
+    "falsas_por_semana": 0.0,
+    "precision": 1.0,
+    "sensibilidad": 0.4444444444444444,
+    "f1": 0.6153846153846153,
+    "punto": "0.6 / 2 h"
+   },
+   "cambio en vivo (entrenados con IMN)": {
+    "eventos": 9,
+    "detectados": 4,
+    "alarmas": 6,
+    "falsas": 0,
+    "falsas_por_semana": 0.0,
+    "precision": 1.0,
+    "sensibilidad": 0.4444444444444444,
+    "f1": 0.6153846153846153,
+    "punto": "0.6 / 2 h",
+    "cambio_prob_medio": 0.0029147985990001044,
+    "cambio_prob_p99": 0.031685089525139
+   },
+   "IMN, punto elegido otra vez": {
+    "eventos": 9,
+    "detectados": 7,
+    "alarmas": 14,
+    "falsas": 4,
+    "falsas_por_semana": 0.22764227642276422,
+    "precision": 0.7142857142857143,
+    "sensibilidad": 0.7777777777777778,
+    "f1": 0.7446808510638298,
+    "punto": "0.3 / 1 h"
+   },
+   "reentrenados con Open-Meteo": {
+    "eventos": 9,
+    "detectados": 7,
+    "alarmas": 10,
+    "falsas": 1,
+    "falsas_por_semana": 0.056910569105691054,
+    "precision": 0.9,
+    "sensibilidad": 0.7777777777777778,
+    "f1": 0.8344370860927153,
+    "punto": "0.3 / 1 h"
+   }
+  }
+ }
+}

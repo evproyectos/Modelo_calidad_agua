@@ -33,3 +33,6 @@ htmlcov/
 
 # dataset maestro exportado (herramientas/dataset_maestro.py)
 /datos_maestro/
+
+# modelos y MLflow empaquetados para el release (herramientas/publicar_modelos.py)
+/artefactos/

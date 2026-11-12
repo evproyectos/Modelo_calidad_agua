@@ -78,9 +78,12 @@ notebooks/    EDA y modelos, numerados en el orden de lectura
 pruebas/      pruebas unitarias (test_*.py) y la prueba de variables en vivo
 .github/      integración continua en GitHub (estilo, pruebas, cobertura y secretos)
 figuras/      figuras exportadas para el informe
-modelos/      modelos entrenados (se generan con los notebooks 06 a 10; no se versionan)
+modelos/      modelos entrenados (se generan con los notebooks 06 a 10; no se versionan: están
+              en un release de GitHub, ver Publicar los modelos)
+artefactos.json  release de GitHub con los modelos y la historia de MLflow, y la huella de cada archivo
 herramientas/ correr_notebooks.py: corre todos los notebooks en orden y los guarda;
               reentrenar.py: vuelve a entrenar todos los modelos;
+              publicar_modelos.py: empaqueta los modelos y MLflow para el release;
               dataset_maestro.py: exporta el dataset maestro preprocesado (Parquet y CSV)
 docs/         esquema del dataset (docs/datos) y variables de los modelos (docs/modelos)
 registros/    registro del preprocesamiento (lo escriben los notebooks; no se versiona)
@@ -121,6 +124,26 @@ Esquema: `docs/datos/esquema-dataset.md`. Variables de cada modelo: `docs/modelo
 4. Revisar en el notebook 07 (sección 6) si el detector elegido sigue ganando: si el otro modelo
    detecta más con la misma regla, cambiar `detector.modelo` en `hiperparametros.yaml` (`bosque` o
    `arboles`) y correr `python herramientas/reentrenar.py 07`.
+5. Publicar los modelos nuevos (abajo), para que Docker los use en cualquier máquina.
+
+## Publicar los modelos
+
+`modelos/`, `mlflow.db` y `mlartifacts/` no se versionan (pesan unos 150 MB y cambian con cada
+reentrenamiento). Se publican como un **release** de GitHub de este proyecto, y
+`artefactos.json` (que sí se versiona) dice cuál y con qué huella SHA-256. El Docker de
+`Monitoreo_calidad_agua` descarga de ahí lo que falte en una máquina nueva y comprueba la huella.
+Después de reentrenar:
+
+1. `python herramientas/publicar_modelos.py modelos-AAAA-MM-DD` (con la fecha de hoy): deja
+   `artefactos/modelos.zip` y `artefactos/mlflow.zip` y actualiza `artefactos.json`.
+2. En GitHub, **Releases → Draft a new release**: etiqueta `modelos-AAAA-MM-DD` (la misma), y
+   adjuntar los dos `.zip` de `artefactos/`. O con la CLI de GitHub:
+   `gh release create modelos-AAAA-MM-DD artefactos/modelos.zip artefactos/mlflow.zip --title modelos-AAAA-MM-DD`
+3. Commit y push de `artefactos.json`.
+
+Hasta que el release exista, Docker no puede descargar los modelos en otra máquina (en esta los
+tiene, porque `modelos/` ya está). En la copia de `mlflow.db` que va en el release, las rutas de los
+archivos de cada corrida apuntan a `/modelo/mlartifacts`, donde los ve el MLflow de Docker.
 
 ## Instalación
 

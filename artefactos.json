@@ -18,11 +18,11 @@
         "lstm_24h_semilla1.keras": "5da1cf249a89b2ee6015684386a2b722745e67b716536cc1ecf2da3f5d1779b8",
         "lstm_24h_semilla2.keras": "1ca7999c552d38f26b8ce3d5d68533aabef40121426f8a73d70141920c132dc1",
         "pronostico_24h.joblib": "de67311671708fa6597562da0e6cdee4d0f9122885e84fbfe254e2685ac6da7f",
-        "pronostico_24h_final.joblib": "6f70969005f3b7b5ce460c8e1a3266b1bf1a4350393529d5944e1015fe5edb65",
+        "pronostico_24h_final.joblib": "5dcb755791d584ae0d86e76fe398f7354cefa423c0c6b539c5fa6c66a6e25026",
         "referencia_deriva.joblib": "baf2e7312263ddd2aad4191331c5fcfab3ab76d1883a7128a63b08a10dfb7455"
       },
-      "sha256": "00fd72947f9d1c56ac284529a754f60bd26f725a3b5f8abcd9cb85a3d346f9a4",
-      "bytes": 70639229
+      "sha256": "bbc4856eda8fd8e5bda35ebf1a79b8212d8fd3b174106b695386a04b79936eb4",
+      "bytes": 70639145
     },
     {
       "nombre": "mlflow.zip",

@@ -23,7 +23,7 @@ red = ["tensorflow>=2.16"]
 # (incluye MLflow, donde los notebooks 06, 07 y 08 registran los experimentos)
 notebooks = ["matplotlib>=3.8", "seaborn>=0.13", "statsmodels>=0.14", "jupyter", "ipykernel", "mlflow>=3.5"]
 # pruebas unitarias, cobertura y estilo (lo mismo que corre el CI)
-dev = ["pytest>=8", "pytest-cov>=5", "flake8>=7", "mlflow>=3.5"]
+dev = ["pytest>=8", "pytest-cov>=5", "flake8>=7", "mlflow>=3.5", "dill"]   # dill: prueba de persistencia.py
 
 [tool.setuptools]
 packages = ["calidad_agua"]

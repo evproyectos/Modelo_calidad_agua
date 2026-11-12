@@ -11,10 +11,8 @@ Uso, desde la raíz del proyecto y con el entorno activado (después de los note
 import sys
 from pathlib import Path
 
-import joblib
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from calidad_agua import calidad, carga, deriva, experimentos  # noqa: E402
+from calidad_agua import calidad, carga, deriva, experimentos, persistencia  # noqa: E402
 
 if __name__ == "__main__":
     t15 = calidad.lecturas_operativas(carga.cargar("entrenamiento"))
@@ -22,6 +20,7 @@ if __name__ == "__main__":
     ref = deriva.referencia(h)
     destino = Path(__file__).resolve().parents[1] / "modelos" / "referencia_deriva.joblib"
     destino.parent.mkdir(exist_ok=True)
-    joblib.dump({"referencia": ref, "sensores": carga.sensores(t15), "periodo": carga.texto_periodo("entrenamiento"),
-                 "dataset_sha256": experimentos.huella_datos()[0]}, destino)
+    persistencia.guardar({"referencia": ref, "sensores": carga.sensores(t15),
+                          "periodo": carga.texto_periodo("entrenamiento"),
+                          "dataset_sha256": experimentos.huella_datos()[0]}, destino)
     print(f"Guardado: {destino} ({len(ref)} columnas: {', '.join(ref)})")

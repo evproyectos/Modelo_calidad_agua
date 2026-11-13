@@ -49,7 +49,7 @@ DESVIACION_MAXIMA = 0.10                   # RF-002.3: desviación del F1 entre 
 def correr_modelo(clave_modelo, datos, plgs, n_busqueda, semilla, con_mlflow):
     t0 = time.time()
     val = V.VALIDADORES[clave_modelo](datos)
-    cfg = V.CFG[clave_modelo]
+    cfg = V.CFG[getattr(val, "grillas", clave_modelo)]
     print(f"\n== {val.nombre} ==", flush=True)
     reg = experimentos.iniciar(val.experimento, "RF-002.3/4 · validación cruzada y búsqueda",
                                "herramientas/validacion_cruzada.py") if con_mlflow else None
@@ -87,6 +87,7 @@ def correr_modelo(clave_modelo, datos, plgs, n_busqueda, semilla, con_mlflow):
                "base_regla": {"f1_media": base_regla.f1_media, "f1_desv": base_regla.f1_desv,
                               "punto": str(base_regla.punto)},
                "curva": curva, "sensibilidad": sens, "busqueda": bus,
+               "grillas": getattr(val, "grillas", clave_modelo),
                "mejor": {"configuracion": mejor["configuracion"], "params": params_mejor,
                          "f1_media": float(mejor["f1_media"]), "f1_desv": float(mejor["f1_desv"]),
                          "punto": mejor["punto"]},
@@ -256,7 +257,7 @@ def reporte(res, plgs, segundos):
                         {"f1_media": "{:.2f}", "f1_desv": "{:.2f}", "falsas_por_semana": "{:.2f}"}), "",
               f"### Búsqueda al azar ({len(r['busqueda']) - 1} configuraciones y el modelo final)", ""]
         cols = {"configuracion": "Configuración"}
-        cols.update({c: c for c in V.CFG[k]["espacio"] if c in r["busqueda"]})
+        cols.update({c: c for c in V.CFG[r.get("grillas", k)]["espacio"] if c in r["busqueda"]})
         cols.update({"f1_media": "F1 medio", "f1_desv": "Desv.", "detectados": "Detectados", "eventos": "De",
                      "falsas_por_semana": "Falsas/semana", "segundos": "Segundos"})
         L += [_tabla_md(r["busqueda"], cols, {"f1_media": "{:.2f}", "f1_desv": "{:.2f}", "falsas_por_semana": "{:.2f}",
@@ -301,9 +302,13 @@ def main():
     for k in sorted(V.VALIDADORES, key=["fugas", "anticipacion", "detector"].index):   # los rápidos primero
         archivo = GUARDADO / f"{k}.joblib"
         if k in modelos and not (a.reanudar and archivo.exists()):
-            hechos[k] = correr_modelo(k, datos, plgs, a.busqueda, V.CFG.get("semilla", 0), not a.sin_mlflow)
-            joblib.dump(hechos[k], archivo)
-        elif archivo.exists():                      # de una corrida anterior, para el reporte completo
+            try:
+                hechos[k] = correr_modelo(k, datos, plgs, a.busqueda, V.CFG.get("semilla", 0), not a.sin_mlflow)
+                joblib.dump(hechos[k], archivo)
+                continue
+            except V.SinBusqueda as e:
+                print(f"\n== {k}: se omite ({e}); queda la corrida anterior, si la hay", flush=True)
+        if archivo.exists():                      # de una corrida anterior, para el reporte completo
             hechos[k] = joblib.load(archivo)
     res = {k: hechos[k] for k in V.VALIDADORES if k in hechos}
     figuras(res)

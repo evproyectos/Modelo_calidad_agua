@@ -18,11 +18,11 @@ def test_yaml_trae_los_mismos_hiperparametros_que_se_usaron_al_entrenar():
     assert modelo.HIPERPARAMETROS == dict(loss="absolute_error", max_iter=400, learning_rate=0.05, max_leaf_nodes=31,
                                           min_samples_leaf=50, l2_regularization=1.0, early_stopping=True,
                                           validation_fraction=0.1, random_state=0)
-    assert detector.MODELO == "bosque"
+    assert detector.MODELO == "arboles"
     assert detector.HIPERPARAMETROS["bosque"] == dict(n_estimators=200, min_samples_leaf=20, max_features="sqrt",
                                                       class_weight="balanced_subsample", n_jobs=-1, random_state=0)
-    assert detector.HIPERPARAMETROS["arboles"] == dict(max_iter=300, learning_rate=0.05, max_leaf_nodes=31,
-                                                       min_samples_leaf=40, l2_regularization=1.0,
+    assert detector.HIPERPARAMETROS["arboles"] == dict(max_iter=150, learning_rate=0.05, max_leaf_nodes=63,
+                                                       min_samples_leaf=80, l2_regularization=3.0,
                                                        class_weight="balanced", early_stopping=True,
                                                        validation_fraction=0.1, random_state=0)
     lstm = configuracion.seccion("lstm")

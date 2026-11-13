@@ -1,8 +1,8 @@
 """
 Detector de eventos (scikit-learn): RandomForestClassifier o HistGradientBoostingClassifier, según
-`detector.modelo` en hiperparametros.yaml. Con los 10 sensores del sistema se usa el Random Forest,
-que gana con la regla de elección del notebook 07 (más eventos detectados con menos de 1 falsa
-alarma por semana en todos los bloques); el notebook compara siempre los dos.
+`detector.modelo` en hiperparametros.yaml: el que gana con la regla de elección del notebook 07 (más
+eventos detectados con menos de 1 falsa alarma por semana en todos los bloques), que compara siempre
+los dos al reentrenar.
 
 Una fila = un sensor en una hora. El modelo estima la probabilidad de que en esa hora haya un
 evento visible en ese sensor, y de qué tipo. Solo usa información disponible hasta esa hora.

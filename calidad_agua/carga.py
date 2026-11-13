@@ -16,6 +16,8 @@ Archivos que se leen:
       Lecturas de los sensores, cada 15 min, más las etiquetas:
         CL2_<nodo>, TEMP_<nodo>, TURB_<nodo>, PH_<nodo>, P_<nodo>   lecturas
         Q_R1, lluvia_mm_h                                           caudal de la fuente y lluvia
+                               (la lluvia es la del IMN; al cargar se cambia por la de la fuente
+                               de hiperparametros.yaml, sección datos: fuentes_lluvia.py, RNF-009)
         falla_<PARAM>_<nodo>   0 = sin falla; si no, código de falla del sensor
         evento_<nodo>          tipo de evento visible en ese sensor (0 = normal)
         evento_visible         evento visible en algún sensor del sistema (0-5)
@@ -30,7 +32,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from . import configuracion
+from . import configuracion, fuentes_lluvia
 
 RAIZ = Path(__file__).resolve().parents[1]
 PARTICIONES = ["entrenamiento", "validacion", "prueba"]
@@ -81,7 +83,7 @@ def cargar(particion="entrenamiento", verdad=False, todos=False):
     """Una partición. Con verdad=True devuelve los valores reales sin ruido ni fallas. Con
     todos=True, con todos los sensores del dataset (para elegir dónde van los del sistema)."""
     nombre = f"verdad_{particion}" if verdad else particion
-    t = pd.read_parquet(carpeta_datos() / f"{nombre}.parquet")
+    t = fuentes_lluvia.aplicar(pd.read_parquet(carpeta_datos() / f"{nombre}.parquet"))   # RNF-009
     return t if todos else filtrar_sensores(t, sensores_sistema())
 
 

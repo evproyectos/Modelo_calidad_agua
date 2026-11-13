@@ -7,7 +7,9 @@ San Carlos), que el simulador mete en las lecturas. El servicio de monitoreo la 
 fuente de lluvia observada elegida por configuración (adaptadores en Monitoreo_calidad_agua); la
 que se puede consultar en vivo es Open-Meteo. Este script mide qué pasaría con los modelos si se
 cambia la fuente, SIN modificar ningún módulo de modelado: solo cambia la columna lluvia_mm_h de los
-datos al cargarlos y reutiliza los validadores de calidad_agua/validacion.py.
+datos al cargarlos y reutiliza los validadores de calidad_agua/validacion.py. Trabaja siempre con la
+lluvia del dataset como referencia (FUENTE_LLUVIA=lecturas), aunque los modelos se entrenen con otra
+(hiperparametros.yaml, sección datos).
 
 Archivo: clima/lluvia_open_meteo_historica.csv, de la Historical Forecast API de Open-Meteo (las
 primeras horas de cada pronóstico, lo mismo que devuelve en vivo la Forecast API con `past_days`):
@@ -35,6 +37,7 @@ Uso, desde la raíz del proyecto:  python herramientas/fuente_lluvia.py [--serie
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -50,12 +53,11 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from calidad_agua import carga, graficos  # noqa: E402
+from calidad_agua.fuentes_lluvia import ARCHIVO, CUATRO, leer_open_meteo  # noqa: E402,F401
 from calidad_agua import validacion as V  # noqa: E402
 
-ARCHIVO = RAIZ / "clima" / "lluvia_open_meteo_historica.csv"
 DOC = RAIZ / "docs" / "modelos" / "fuente-lluvia.md"
 LECTURA = RAIZ / "docs" / "modelos" / "fuente-lluvia-lectura.md"
-CUATRO = ["ecmwf_ifs025", "gfs_seamless", "icon_seamless", "gem_seamless"]
 NOMBRES = {"best_match": "Open-Meteo best_match", "promedio": "promedio de 4 modelos",
            "ecmwf_ifs025": "ECMWF IFS", "gfs_seamless": "GFS", "icon_seamless": "ICON", "gem_seamless": "GEM"}
 LLUEVE_MM_H, DIA_LLUVIOSO_MM = 1.0, 10.0
@@ -63,20 +65,6 @@ MODELOS = {"detector": "Detector de eventos", "anticipacion": "Anticipación a 2
 
 
 # ---------------------------------------------------------------------------- series
-def leer_open_meteo(ruta=ARCHIVO):
-    """Una columna por modelo meteorológico (mm en la hora), más el promedio de los cuatro globales."""
-    t = pd.read_csv(ruta, skiprows=3)
-    t = t[t["time"] != "time"]                       # si se unieron varios CSV con su encabezado
-    t.index = pd.to_datetime(t.pop("time"))
-    t = t.apply(pd.to_numeric, errors="coerce")
-    t.columns = [c.split(" (")[0].replace("precipitation_", "").replace("precipitation", "best_match")
-                 for c in t.columns]
-    t = t[~t.index.duplicated()].sort_index().clip(lower=0)
-    if all(m in t for m in CUATRO):
-        t["promedio"] = t[CUATRO].mean(axis=1)
-    return t
-
-
 def lluvia_imn(crudo):
     """Lluvia horaria del dataset (la del IMN), con la convención de Open-Meteo."""
     return crudo["lluvia_mm_h"].resample("1h", label="left", closed="left").mean()
@@ -225,6 +213,7 @@ def main():
                     "la de mejor correlación de 30 días con el IMN)")
     ap.add_argument("--modelos", nargs="*", default=list(MODELOS))
     args = ap.parse_args()
+    os.environ["FUENTE_LLUVIA"] = "lecturas"         # la referencia es la lluvia del dataset (IMN)
     t0 = time.time()
     om = leer_open_meteo()
     imn = lluvia_imn(carga.cargar_todo())

@@ -166,6 +166,8 @@ def test_secuencias():
     assert s.shape == (6, 3, 2)
     assert s[5].tolist() == [[6, 7], [8, 9], [10, 11]]
     assert s[0].tolist() == [[0, 0], [0, 0], [0, 1]]
+    corta = A.secuencias(X[:2], 4)                      # menos horas que el largo (servicio al arrancar)
+    assert corta.shape == (2, 4, 2) and corta[1].tolist() == [[0, 0], [0, 0], [0, 1], [2, 3]]
 
 
 def test_retrasos_propagacion():

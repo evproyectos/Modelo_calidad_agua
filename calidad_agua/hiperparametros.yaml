@@ -12,6 +12,13 @@ red:                           # carga.py · sensores del sistema (los demás de
   cantidad: 10
   sensores: [J280, J237, J224, J439, J1058, J69, J345, J101, J284, J144]
 
+datos:                         # fuentes_lluvia.py · RNF-009, lluvia observada con que se entrena
+  # Los sensores no miden lluvia: la del dataset es la de la estación del IMN (lecturas). En
+  # operación se consulta Open-Meteo, así que los modelos se entrenan con esa misma lluvia
+  # (docs/modelos/fuente-lluvia.md). Se puede cambiar con FUENTE_LLUVIA y LLUVIA_MODELOS.
+  fuente_lluvia: open-meteo      # lecturas | open-meteo
+  lluvia_modelos: ecmwf_ifs025   # el que mejor coincide con la estación (separados por comas)
+
 preprocesamiento:              # preprocesamiento.py · RF-001.3, lecturas cada 15 min
   paso_min: 15
   max_hueco_min: 30            # huecos de hasta 30 min se interpolan; los más largos se marcan
@@ -40,9 +47,9 @@ pronostico_arboles:            # modelo.py · HistGradientBoostingRegressor, uno
 
 detector:                      # detector.py · notebook 07
   # el que usa el servicio: bosque (RandomForestClassifier) o arboles (HistGradientBoostingClassifier).
-  # Con 10 sensores gana el bosque con la regla de elección (notebook 07, sección 6); con 3 ganaban
-  # los árboles. El notebook 07 compara siempre los dos.
-  modelo: bosque
+  # Con 10 sensores y la lluvia de Open-Meteo ganan los árboles con la regla de elección (notebook
+  # 07, sección 6); con la lluvia del IMN ganaba el bosque. El notebook 07 compara siempre los dos.
+  modelo: arboles
   bosque:                      # RandomForestClassifier
     n_estimators: 200
     min_samples_leaf: 20
@@ -50,12 +57,12 @@ detector:                      # detector.py · notebook 07
     class_weight: balanced_subsample   # los eventos son pocos frente a las horas normales
     n_jobs: -1
     random_state: 0
-  arboles:                     # HistGradientBoostingClassifier
-    max_iter: 300
-    learning_rate: 0.05
-    max_leaf_nodes: 31
-    min_samples_leaf: 40
-    l2_regularization: 1.0
+  arboles:                     # HistGradientBoostingClassifier · elegido con la búsqueda al azar (RF-002.4,
+    max_iter: 150              # docs/modelos/validacion-cruzada.md): +3,1 puntos de F1 en los pliegues
+    learning_rate: 0.05        # contra 300 iteraciones, 31 hojas, mínimo 40 por hoja y l2 1,0
+    max_leaf_nodes: 63
+    min_samples_leaf: 80
+    l2_regularization: 3.0
     class_weight: balanced
     early_stopping: true
     validation_fraction: 0.1
@@ -85,22 +92,22 @@ lstm:                          # notebook 08 · red_neuronal.construir y entrena
   semillas: [0, 1, 2]          # una red por semilla; el pronóstico es el promedio
 
 anticipacion:                  # anticipacion.py · notebook 09 · ¿empieza un evento en las próximas 24 h?
-  arboles:                     # HistGradientBoostingClassifier
-    max_iter: 300
-    learning_rate: 0.05
-    max_leaf_nodes: 15
-    min_samples_leaf: 40
-    l2_regularization: 1.0
+  arboles:                     # HistGradientBoostingClassifier · elegido con la búsqueda al azar (RF-002.4,
+    max_iter: 300              # docs/modelos/validacion-cruzada.md): +5,7 puntos de F1 en los pliegues
+    learning_rate: 0.03        # contra tasa 0,05, 15 hojas, mínimo 40 por hoja y l2 1,0
+    max_leaf_nodes: 7
+    min_samples_leaf: 20
+    l2_regularization: 0.0
     class_weight: balanced
     early_stopping: true
     validation_fraction: 0.1
     random_state: 0
   bosque:                      # RandomForestClassifier · elegido con la búsqueda al azar (RF-002.4,
-    n_estimators: 500          # docs/modelos/validacion-cruzada.md): +6,7 puntos de F1 en los pliegues
-    min_samples_leaf: 3        # contra 300 árboles, hojas de 10 y max_features sqrt
-    max_features: 0.33
-    max_depth: null
-    class_weight: balanced_subsample
+    n_estimators: 300          # docs/modelos/validacion-cruzada.md) con la lluvia de Open-Meteo: +10,2
+    min_samples_leaf: 40       # puntos de F1 en los pliegues contra la configuración de la búsqueda con
+    max_features: 0.33         # la lluvia del IMN (500 árboles, hojas de 3, sin límite de profundidad,
+    max_depth: 20              # balanced_subsample)
+    class_weight: balanced
     n_jobs: -1
     random_state: 0
   isolation:                   # IsolationForest (sin etiquetas)
@@ -128,7 +135,7 @@ validacion:                    # validacion.py · herramientas/validacion_cruzad
   fracciones: [0.2, 0.4, 0.6, 0.8, 1.0]   # curva de aprendizaje: parte más reciente del entrenamiento
   busqueda: 10                 # Random Search: configuraciones al azar por modelo (más la del modelo final)
   semilla: 0
-  detector:                    # Random Forest (detector.bosque)
+  detector:                    # Random Forest (detector.bosque), si es el del detector
     sensibilidad:              # un hiperparámetro a la vez, el resto como en el modelo final
       n_estimators: [50, 100, 200, 400]
       min_samples_leaf: [5, 10, 20, 40, 80]
@@ -139,7 +146,18 @@ validacion:                    # validacion.py · herramientas/validacion_cruzad
       max_features: [sqrt, 0.2, 0.33]
       max_depth: [null, 15, 30]
       class_weight: [balanced, balanced_subsample]
-  anticipacion:                # Random Forest por tipo de evento (anticipacion.bosque)
+  detector_arboles:            # HistGradientBoosting (detector.arboles), si es el del detector
+    sensibilidad:
+      max_iter: [100, 200, 300, 500]
+      learning_rate: [0.02, 0.05, 0.1]
+      min_samples_leaf: [10, 20, 40, 80]
+    espacio:
+      max_iter: [150, 300, 500]
+      learning_rate: [0.03, 0.05, 0.1]
+      max_leaf_nodes: [15, 31, 63]
+      min_samples_leaf: [10, 20, 40, 80]
+      l2_regularization: [0.0, 1.0, 3.0]
+  anticipacion:                # Random Forest por tipo de evento (anticipacion.bosque), si es el elegido
     sensibilidad:
       n_estimators: [100, 300, 500]
       min_samples_leaf: [3, 5, 10, 20, 40]
@@ -150,6 +168,17 @@ validacion:                    # validacion.py · herramientas/validacion_cruzad
       max_features: [sqrt, 0.2, 0.33]
       max_depth: [null, 10, 20]
       class_weight: [balanced, balanced_subsample]
+  anticipacion_arboles:        # HistGradientBoosting por tipo (anticipacion.arboles), si es el elegido
+    sensibilidad:
+      max_iter: [100, 200, 300, 500]
+      learning_rate: [0.02, 0.05, 0.1]
+      min_samples_leaf: [10, 20, 40, 80]
+    espacio:
+      max_iter: [150, 300, 500]
+      learning_rate: [0.03, 0.05, 0.1]
+      max_leaf_nodes: [7, 15, 31]
+      min_samples_leaf: [10, 20, 40, 80]
+      l2_regularization: [0.0, 1.0, 3.0]
   fugas:                       # SVM (fugas.svm)
     sensibilidad:
       C: [0.1, 0.3, 1.0, 3.0, 10.0]

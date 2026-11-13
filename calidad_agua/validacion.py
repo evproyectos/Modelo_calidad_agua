@@ -95,6 +95,10 @@ class Datos:
 
 
 # ---------------------------------------------------------------------------- modelos
+class SinBusqueda(ValueError):
+    """El modelo final es de un tipo para el que no está hecha la búsqueda (p. ej. la LSTM)."""
+
+
 class Validador:
     """Lo que cada modelo tiene que saber hacer para validarlo y buscar sus hiperparámetros."""
 
@@ -119,9 +123,14 @@ class Validador:
 class ValidadorDetector(Validador):
     nombre, experimento, archivo = "Detector de eventos", "detector_eventos", "detector_eventos.joblib"
     seccion = ("detector", "bosque")
+    grillas = "detector"                # sección de validacion en hiperparametros.yaml
 
     def __init__(self, datos):
         super().__init__(datos)
+        # el modelo que tiene el detector final: bosque o árboles (hiperparametros.yaml, detector.modelo)
+        self.modelo = "bosque" if detector.nombre(self.final["modelo"]) == "Random Forest" else "arboles"
+        self.seccion = ("detector", self.modelo)
+        self.grillas = "detector" if self.modelo == "bosque" else "detector_arboles"
         self.tabla, _ = detector.tabla(datos.h)
         self.columnas = detector.columnas_entrada(self.tabla)
         self.fechas = self.tabla["fecha"].values
@@ -136,7 +145,7 @@ class ValidadorDetector(Validador):
 
     def ajustar(self, prep, params=None, filas=None):
         filas = prep["entrena"] if filas is None else filas
-        return detector.entrenar(prep["tabla"], self.columnas, filas, modelo="bosque", params=params)
+        return detector.entrenar(prep["tabla"], self.columnas, filas, modelo=self.modelo, params=params)
 
     def vacio(self):
         return np.full(len(self.tabla), np.nan)
@@ -175,9 +184,14 @@ class ValidadorAnticipacion(Validador):
         self.utiles = A.filas_utiles(self.h, self.objetivo)
         self.pronostico = clima.ventanas(clima.cargar_pronostico(), self.h.index)
         self.fechas = self.h.index.values
-        self.arboles = self.final.get("nombre") == "árboles"
+        nombre = self.final.get("nombre")
+        if nombre not in ("árboles", "bosque aleatorio"):     # la LSTM se elige en el notebook 09
+            raise SinBusqueda(f"la búsqueda no está hecha para la anticipación con {nombre!r}")
+        self.arboles = nombre == "árboles"
+        self.grillas = "anticipacion"
         if self.arboles:
             self.seccion = ("anticipacion", "arboles")
+            self.grillas = "anticipacion_arboles"
 
     def preparar(self, pl):
         dentro = (self.h.index >= pl.entrena_desde) & (self.h.index < pl.entrena_hasta)

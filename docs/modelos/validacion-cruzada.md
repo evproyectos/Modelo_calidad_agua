@@ -1,6 +1,6 @@
 # Validación cruzada y búsqueda de hiperparámetros (RF-002.3 y RF-002.4)
 
-> Generado por `python herramientas/validacion_cruzada.py` el 11/11/2026 21:15 (95 min de cálculo) · commit `4cc0bf66` (con cambios sin commit) · datos sha256 `a0209416ebea`. No editar a mano: se vuelve a generar.
+> Generado por `python herramientas/validacion_cruzada.py` el 12/11/2026 18:48 (71 min de cálculo) · commit `9f10ce72` (con cambios sin commit) · datos sha256 `a0209416ebea`. No editar a mano: se vuelve a generar.
 
 ## Cómo se valida
 
@@ -20,9 +20,9 @@
 
 | Modelo | F1 por pliegue (media ± desv.) | Desv. ≤ 0.10 | F1 del modelo final (regla) | F1 de la mejor búsqueda | Mejora (puntos) | Decisión (RF-002.4) |
 |---|---|---|---|---|---|---|
-| Detector de eventos | 0.63 ± 0.06 | sí | 0.63 | 0.65 | +1.7 | el modelo final ya era óptimo |
-| Anticipación a 24 h | 0.32 ± 0.08 | sí | 0.27 | 0.34 | +6.7 | se adopta la mejor configuración |
-| Fugas | 0.49 ± 0.21 | no | 0.49 | 0.61 | +11.5 | se adopta la mejor configuración |
+| Detector de eventos | 0.67 ± 0.08 | sí | 0.67 | 0.71 | +3.1 | se adopta la mejor configuración |
+| Anticipación a 24 h | 0.30 ± 0.12 | no | 0.25 | 0.36 | +10.2 | se adopta la mejor configuración |
+| Fugas | 0.58 ± 0.16 | no | 0.65 | 0.65 | +0.0 | el modelo final ya era óptimo |
 
 Criterios: RF-002.3 pide una desviación del F1 entre pliegues ≤ 0.10; RF-002.4, que la búsqueda mejore el F1 en al menos 2 puntos o que se documente que el modelo ya era óptimo. Los hiperparámetros del modelo final están en `calidad_agua/hiperparametros.yaml`.
 
@@ -30,19 +30,19 @@ Criterios: RF-002.3 pide una desviación del F1 entre pliegues ≤ 0.10; RF-002.
 
 ## Detector de eventos
 
-Hiperparámetros del modelo final: `{"n_estimators": "200", "min_samples_leaf": "20", "max_features": "sqrt", "class_weight": "balanced_subsample", "n_jobs": "-1", "random_state": "0"}`; umbral y confirmación: `(0.7, 3)`. Experimento de MLflow: `detector_eventos`.
+Hiperparámetros del modelo final: `{"max_iter": "300", "learning_rate": "0.05", "max_leaf_nodes": "31", "min_samples_leaf": "40", "l2_regularization": "1.0", "class_weight": "balanced", "early_stopping": "True", "validation_fraction": "0.1", "random_state": "0"}`; umbral y confirmación: `(0.95, 2)`. Experimento de MLflow: `detector_eventos`.
 
 ### F1 por pliegue (modelo final)
 
 | Pliegue | Eventos | Detectados | Alarmas | Falsas | Falsas/semana | Precisión | Sensibilidad | F1 |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 20 | 8 | 16 | 2 | 0.18 | 88% | 40% | 0.55 |
-| 2 | 20 | 13 | 32 | 10 | 0.88 | 69% | 65% | 0.67 |
-| 3 | 24 | 14 | 24 | 1 | 0.09 | 96% | 58% | 0.73 |
-| 4 | 18 | 10 | 22 | 6 | 0.51 | 73% | 56% | 0.63 |
-| 5 | 23 | 13 | 22 | 8 | 0.69 | 64% | 57% | 0.60 |
+| 1 | 20 | 12 | 29 | 8 | 0.71 | 72% | 60% | 0.66 |
+| 2 | 20 | 11 | 27 | 3 | 0.26 | 89% | 55% | 0.68 |
+| 3 | 24 | 16 | 27 | 0 | 0.00 | 100% | 67% | 0.80 |
+| 4 | 18 | 10 | 21 | 2 | 0.17 | 90% | 56% | 0.69 |
+| 5 | 23 | 10 | 15 | 4 | 0.35 | 73% | 43% | 0.55 |
 
-Media 0.63, desviación estándar 0.06.
+Media 0.67, desviación estándar 0.08.
 
 ### Curva de aprendizaje
 
@@ -50,11 +50,11 @@ Media 0.63, desviación estándar 0.06.
 
 | Meses | Desde | Eventos (entr.) | Error entrenamiento | Eventos (valid.) | Error validación |
 |---|---|---|---|---|---|
-| 3.3 | 2025-10-09 | 18 | 0.03 | 23 | 0.56 |
-| 6.6 | 2025-06-30 | 41 | 0.05 | 23 | 0.58 |
-| 9.9 | 2025-03-21 | 61 | 0.05 | 23 | 0.33 |
-| 13.3 | 2024-12-11 | 80 | 0.05 | 23 | 0.34 |
-| 16.6 | 2024-09-01 | 103 | 0.05 | 23 | 0.40 |
+| 3.3 | 2025-10-09 | 18 | 0.03 | 23 | 0.53 |
+| 6.6 | 2025-06-30 | 41 | 0.03 | 23 | 0.49 |
+| 9.9 | 2025-03-21 | 61 | 0.03 | 23 | 0.48 |
+| 13.3 | 2024-12-11 | 80 | 0.04 | 23 | 0.39 |
+| 16.6 | 2024-09-01 | 103 | 0.02 | 23 | 0.45 |
 
 ### Sensibilidad a los hiperparámetros
 
@@ -62,52 +62,51 @@ Un hiperparámetro a la vez; los demás, como en el modelo final.
 
 | Hiperparámetro | Valor | F1 medio | Desv. | Detectados | De | Falsas/semana | Umbral elegido |
 |---|---|---|---|---|---|---|---|
-| n_estimators | 50 | 0.63 | 0.12 | 55 | 105 | 0.28 | (0.8, 2) |
-| n_estimators | 100 | 0.63 | 0.10 | 54 | 105 | 0.23 | (0.8, 2) |
-| n_estimators | 200 (final) | 0.63 | 0.06 | 58 | 105 | 0.47 | (0.7, 3) |
-| n_estimators | 400 | 0.64 | 0.06 | 59 | 105 | 0.51 | (0.7, 3) |
-| min_samples_leaf | 5 | 0.64 | 0.08 | 59 | 105 | 0.47 | (0.5, 3) |
-| min_samples_leaf | 10 | 0.66 | 0.08 | 60 | 105 | 0.44 | (0.6, 3) |
-| min_samples_leaf | 20 (final) | 0.63 | 0.06 | 58 | 105 | 0.47 | (0.7, 3) |
-| min_samples_leaf | 40 | 0.59 | 0.15 | 53 | 105 | 0.40 | (0.8, 3) |
-| min_samples_leaf | 80 | 0.64 | 0.17 | 58 | 105 | 0.33 | (0.9, 1) |
-| max_features | sqrt (final) | 0.63 | 0.06 | 58 | 105 | 0.47 | (0.7, 3) |
-| max_features | 0.25 | 0.64 | 0.09 | 56 | 105 | 0.38 | (0.8, 2) |
-| max_features | 0.5 | 0.65 | 0.11 | 60 | 105 | 0.51 | (0.8, 2) |
+| max_iter | 100 | 0.67 | 0.10 | 59 | 105 | 0.37 | (0.9, 3) |
+| max_iter | 200 | 0.67 | 0.08 | 59 | 105 | 0.30 | (0.95, 2) |
+| max_iter | 300 (final) | 0.67 | 0.08 | 59 | 105 | 0.30 | (0.95, 2) |
+| max_iter | 500 | 0.67 | 0.08 | 59 | 105 | 0.30 | (0.95, 2) |
+| learning_rate | 0.02 | 0.68 | 0.11 | 61 | 105 | 0.38 | (0.9, 3) |
+| learning_rate | 0.05 (final) | 0.67 | 0.08 | 59 | 105 | 0.30 | (0.95, 2) |
+| learning_rate | 0.1 | 0.68 | 0.11 | 61 | 105 | 0.35 | (0.9, 3) |
+| min_samples_leaf | 10 | 0.69 | 0.10 | 62 | 105 | 0.37 | (0.95, 2) |
+| min_samples_leaf | 20 | 0.67 | 0.09 | 59 | 105 | 0.33 | (0.95, 2) |
+| min_samples_leaf | 40 (final) | 0.67 | 0.08 | 59 | 105 | 0.30 | (0.95, 2) |
+| min_samples_leaf | 80 | 0.68 | 0.11 | 60 | 105 | 0.30 | (0.9, 3) |
 
 ### Búsqueda al azar (10 configuraciones y el modelo final)
 
-| Configuración | n_estimators | min_samples_leaf | max_features | max_depth | class_weight | F1 medio | Desv. | Detectados | De | Falsas/semana | Segundos |
+| Configuración | max_iter | learning_rate | max_leaf_nodes | min_samples_leaf | l2_regularization | F1 medio | Desv. | Detectados | De | Falsas/semana | Segundos |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| #6 | 100 | 20 | 0.33 | 15 | balanced | 0.65 | 0.13 | 59 | 105 | 0.42 | 76 |
-| #7 | 200 | 80 | 0.33 | 30 | balanced | 0.65 | 0.14 | 63 | 105 | 0.65 | 137 |
-| #3 | 300 | 10 | 0.2 | None | balanced | 0.63 | 0.09 | 56 | 105 | 0.35 | 169 |
-| modelo final | — | — | — | — | — | 0.63 | 0.06 | 58 | 105 | 0.47 | 5 |
-| #1 | 200 | 10 | sqrt | None | balanced | 0.63 | 0.11 | 59 | 105 | 0.49 | 72 |
-| #2 | 200 | 40 | sqrt | None | balanced | 0.63 | 0.17 | 58 | 105 | 0.40 | 64 |
-| #5 | 200 | 40 | 0.2 | 15 | balanced | 0.62 | 0.14 | 57 | 105 | 0.44 | 92 |
-| #10 | 100 | 80 | 0.33 | 15 | balanced_subsample | 0.62 | 0.13 | 54 | 105 | 0.26 | 171 |
-| #8 | 300 | 5 | 0.33 | None | balanced_subsample | 0.62 | 0.10 | 55 | 105 | 0.42 | 657 |
-| #9 | 100 | 40 | 0.33 | 15 | balanced_subsample | 0.61 | 0.13 | 53 | 105 | 0.31 | 176 |
-| #4 | 200 | 5 | sqrt | 15 | balanced | 0.55 | 0.19 | 46 | 105 | 0.19 | 63 |
+| #9 | 150 | 0.05 | 63 | 80 | 3.0 | 0.71 | 0.12 | 63 | 105 | 0.25 | 110 |
+| #3 | 500 | 0.03 | 15 | 10 | 0.0 | 0.70 | 0.11 | 63 | 105 | 0.33 | 142 |
+| #8 | 300 | 0.1 | 63 | 20 | 1.0 | 0.69 | 0.10 | 63 | 105 | 0.38 | 84 |
+| #6 | 500 | 0.1 | 15 | 20 | 0.0 | 0.69 | 0.11 | 60 | 105 | 0.25 | 86 |
+| #5 | 300 | 0.1 | 15 | 20 | 0.0 | 0.69 | 0.11 | 60 | 105 | 0.25 | 85 |
+| #2 | 300 | 0.03 | 15 | 20 | 0.0 | 0.68 | 0.10 | 59 | 105 | 0.25 | 129 |
+| #1 | 150 | 0.03 | 31 | 20 | 0.0 | 0.68 | 0.09 | 61 | 105 | 0.33 | 106 |
+| #10 | 300 | 0.05 | 31 | 10 | 3.0 | 0.68 | 0.09 | 60 | 105 | 0.31 | 117 |
+| modelo final | — | — | — | — | — | 0.67 | 0.08 | 59 | 105 | 0.30 | 5 |
+| #7 | 300 | 0.05 | 31 | 20 | 1.0 | 0.67 | 0.09 | 59 | 105 | 0.33 | 104 |
+| #4 | 300 | 0.05 | 63 | 10 | 0.0 | 0.65 | 0.11 | 57 | 105 | 0.35 | 97 |
 
-Mejor: #6 (F1 0.65); modelo final con la misma regla: 0.63 → diferencia +1.7 puntos.
+Mejor: #9 (F1 0.71); modelo final con la misma regla: 0.67 → diferencia +3.1 puntos.
 
 ## Anticipación a 24 h
 
-Hiperparámetros del modelo final: `{"n_estimators": "300", "min_samples_leaf": "10", "max_features": "sqrt", "class_weight": "balanced_subsample", "n_jobs": "-1", "random_state": "0"}`; umbral y confirmación: `{1: (0.6, 1), 2: (0.6, 2), 3: (0.5, 2), 4: (0.2, 3), 5: (0.5, 3)}`. Experimento de MLflow: `anticipacion_eventos`.
+Hiperparámetros del modelo final: `{"n_estimators": "500", "min_samples_leaf": "3", "max_features": "0.33", "max_depth": "None", "class_weight": "balanced_subsample", "n_jobs": "-1", "random_state": "0"}`; umbral y confirmación: `{1: (0.5, 3), 2: (0.3, 3), 3: (0.4, 2), 4: (0.2, 3), 5: (0.6, 2)}`. Experimento de MLflow: `anticipacion_eventos`.
 
 ### F1 por pliegue (modelo final)
 
 | Pliegue | Eventos | Detectados | Alarmas | Falsas | Falsas/semana | Precisión | Sensibilidad | F1 |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 22 | 3 | 13 | 10 | 1.46 | 23% | 14% | 0.17 |
-| 2 | 22 | 7 | 18 | 11 | 1.95 | 39% | 32% | 0.35 |
-| 3 | 24 | 9 | 26 | 17 | 3.27 | 35% | 38% | 0.36 |
-| 4 | 22 | 5 | 13 | 7 | 1.12 | 46% | 23% | 0.30 |
-| 5 | 20 | 9 | 25 | 16 | 2.16 | 36% | 45% | 0.40 |
+| 1 | 22 | 1 | 1 | 0 | 0.00 | 100% | 5% | 0.09 |
+| 2 | 22 | 7 | 25 | 19 | 3.37 | 24% | 32% | 0.27 |
+| 3 | 24 | 10 | 23 | 15 | 2.89 | 35% | 42% | 0.38 |
+| 4 | 22 | 6 | 16 | 10 | 1.60 | 38% | 27% | 0.32 |
+| 5 | 20 | 9 | 22 | 13 | 1.76 | 41% | 45% | 0.43 |
 
-Media 0.32, desviación estándar 0.08.
+Media 0.30, desviación estándar 0.12.
 
 ### Curva de aprendizaje
 
@@ -115,11 +114,11 @@ Media 0.32, desviación estándar 0.08.
 
 | Meses | Desde | Eventos (entr.) | Error entrenamiento | Eventos (valid.) | Error validación |
 |---|---|---|---|---|---|
-| 3.3 | 2025-10-09 | 21 | 0.07 | 20 | 0.88 |
-| 6.6 | 2025-06-30 | 45 | 0.13 | 20 | 0.80 |
-| 9.9 | 2025-03-21 | 67 | 0.13 | 20 | 0.68 |
-| 13.3 | 2024-12-11 | 89 | 0.11 | 20 | 0.60 |
-| 16.6 | 2024-09-01 | 112 | 0.09 | 20 | 0.60 |
+| 3.3 | 2025-10-09 | 21 | 0.02 | 20 | 0.84 |
+| 6.6 | 2025-06-30 | 45 | 0.04 | 20 | 0.76 |
+| 9.9 | 2025-03-21 | 67 | 0.02 | 20 | 1.00 |
+| 13.3 | 2024-12-11 | 89 | 0.01 | 20 | 0.64 |
+| 16.6 | 2024-09-01 | 112 | 0.02 | 20 | 0.57 |
 
 ### Sensibilidad a los hiperparámetros
 
@@ -127,51 +126,51 @@ Un hiperparámetro a la vez; los demás, como en el modelo final.
 
 | Hiperparámetro | Valor | F1 medio | Desv. | Detectados | De | Falsas/semana | Umbral elegido |
 |---|---|---|---|---|---|---|---|
-| n_estimators | 100 | 0.29 | 0.10 | 25 | 110 | 1.18 | {1: (0.6, 1), 2: (0.3, 3), 3: (0.6, 1), 4: (0.6, 1), 5: (0.6, 3)} |
-| n_estimators | 300 (final) | 0.27 | 0.11 | 26 | 110 | 1.47 | {1: (0.6, 2), 2: (0.3, 3), 3: (0.5, 1), 4: (0.3, 3), 5: (0.6, 3)} |
-| n_estimators | 500 | 0.24 | 0.10 | 22 | 110 | 1.39 | {1: (0.6, 2), 2: (0.3, 3), 3: (0.6, 1), 4: (0.3, 3), 5: (0.6, 3)} |
-| min_samples_leaf | 3 | 0.29 | 0.12 | 26 | 110 | 1.33 | {1: (0.5, 1), 2: (0.2, 3), 3: (0.4, 1), 4: (0.2, 3), 5: (0.6, 2)} |
-| min_samples_leaf | 5 | 0.30 | 0.13 | 28 | 110 | 1.41 | {1: (0.5, 3), 2: (0.2, 3), 3: (0.4, 2), 4: (0.2, 3), 5: (0.6, 2)} |
-| min_samples_leaf | 10 (final) | 0.27 | 0.11 | 26 | 110 | 1.47 | {1: (0.6, 2), 2: (0.3, 3), 3: (0.5, 1), 4: (0.3, 3), 5: (0.6, 3)} |
-| min_samples_leaf | 20 | 0.28 | 0.08 | 25 | 110 | 1.18 | {1: (0.6, 2), 2: (0.4, 3), 3: (0.6, 2), 4: (0.5, 2), 5: (0.7, 3)} |
-| min_samples_leaf | 40 | 0.21 | 0.12 | 18 | 110 | 0.81 | {1: (0.7, 1), 2: (0.5, 3), 3: (0.7, 2), 4: (0.6, 2), 5: (0.9, 1)} |
-| max_features | sqrt (final) | 0.27 | 0.11 | 26 | 110 | 1.47 | {1: (0.6, 2), 2: (0.3, 3), 3: (0.5, 1), 4: (0.3, 3), 5: (0.6, 3)} |
-| max_features | 0.25 | 0.31 | 0.11 | 26 | 110 | 1.13 | {1: (0.6, 1), 2: (0.3, 3), 3: (0.5, 3), 4: (0.7, 1), 5: (0.7, 1)} |
-| max_features | 0.5 | 0.30 | 0.13 | 25 | 110 | 1.00 | {1: (0.6, 1), 2: (0.7, 3), 3: (0.6, 1), 4: (0.6, 3), 5: (0.8, 3)} |
+| n_estimators | 100 | 0.29 | 0.13 | 27 | 110 | 1.35 | {1: (0.5, 3), 2: (0.3, 3), 3: (0.5, 3), 4: (0.4, 1), 5: (0.5, 3)} |
+| n_estimators | 300 | 0.24 | 0.13 | 22 | 110 | 1.16 | {1: (0.5, 3), 2: (0.4, 1), 3: (0.5, 2), 4: (0.4, 1), 5: (0.7, 2)} |
+| n_estimators | 500 (final) | 0.25 | 0.09 | 23 | 110 | 1.43 | {1: (0.5, 3), 2: (0.4, 1), 3: (0.5, 2), 4: (0.4, 1), 5: (0.5, 3)} |
+| min_samples_leaf | 3 (final) | 0.25 | 0.09 | 23 | 110 | 1.43 | {1: (0.5, 3), 2: (0.4, 1), 3: (0.5, 2), 4: (0.4, 1), 5: (0.5, 3)} |
+| min_samples_leaf | 5 | 0.25 | 0.13 | 24 | 110 | 1.24 | {1: (0.5, 3), 2: (0.4, 3), 3: (0.5, 3), 4: (0.4, 1), 5: (0.7, 1)} |
+| min_samples_leaf | 10 | 0.25 | 0.13 | 25 | 110 | 1.51 | {1: (0.6, 2), 2: (0.5, 1), 3: (0.6, 1), 4: (0.3, 3), 5: (0.7, 2)} |
+| min_samples_leaf | 20 | 0.35 | 0.14 | 34 | 110 | 1.42 | {1: (0.6, 2), 2: (0.5, 3), 3: (0.7, 1), 4: (0.4, 2), 5: (0.7, 3)} |
+| min_samples_leaf | 40 | 0.28 | 0.14 | 25 | 110 | 1.19 | {1: (0.7, 2), 2: (0.7, 1), 3: (0.8, 1), 4: (0.5, 2), 5: (0.8, 1)} |
+| max_features | sqrt | 0.27 | 0.11 | 28 | 110 | 1.48 | {1: (0.4, 2), 2: (0.2, 3), 3: (0.4, 2), 4: (0.2, 3), 5: (0.5, 2)} |
+| max_features | 0.25 | 0.31 | 0.11 | 31 | 110 | 1.58 | {1: (0.5, 1), 2: (0.2, 3), 3: (0.5, 1), 4: (0.3, 1), 5: (0.5, 3)} |
+| max_features | 0.5 | 0.29 | 0.12 | 25 | 110 | 1.14 | {1: (0.6, 1), 2: (0.4, 3), 3: (0.9, 2), 4: (0.4, 1), 5: (0.6, 3)} |
 
 ### Búsqueda al azar (10 configuraciones y el modelo final)
 
 | Configuración | n_estimators | min_samples_leaf | max_features | max_depth | class_weight | F1 medio | Desv. | Detectados | De | Falsas/semana | Segundos |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| #8 | 500 | 3 | 0.33 | None | balanced_subsample | 0.34 | 0.12 | 31 | 110 | 1.49 | 153 |
-| #3 | 500 | 5 | 0.2 | None | balanced | 0.33 | 0.13 | 29 | 110 | 1.10 | 80 |
-| #5 | 300 | 20 | 0.2 | 10 | balanced | 0.32 | 0.12 | 26 | 110 | 0.72 | 44 |
-| #7 | 300 | 40 | 0.33 | 20 | balanced | 0.31 | 0.11 | 28 | 110 | 1.29 | 59 |
-| #10 | 100 | 40 | 0.33 | 10 | balanced_subsample | 0.30 | 0.12 | 25 | 110 | 0.92 | 30 |
-| #1 | 300 | 5 | sqrt | None | balanced | 0.30 | 0.09 | 28 | 110 | 1.30 | 35 |
-| #9 | 100 | 20 | 0.33 | 10 | balanced_subsample | 0.30 | 0.12 | 27 | 110 | 1.31 | 30 |
-| modelo final | — | — | — | — | — | 0.27 | 0.11 | 26 | 110 | 1.47 | 4 |
-| #6 | 100 | 10 | 0.33 | 10 | balanced | 0.27 | 0.18 | 25 | 110 | 1.05 | 25 |
-| #4 | 300 | 3 | sqrt | 10 | balanced | 0.23 | 0.15 | 22 | 110 | 1.09 | 34 |
-| #2 | 300 | 20 | sqrt | None | balanced | 0.22 | 0.09 | 20 | 110 | 0.99 | 33 |
+| #7 | 300 | 40 | 0.33 | 20 | balanced | 0.36 | 0.14 | 34 | 110 | 1.32 | 59 |
+| #2 | 300 | 20 | sqrt | None | balanced | 0.32 | 0.12 | 30 | 110 | 1.20 | 33 |
+| #1 | 300 | 5 | sqrt | None | balanced | 0.30 | 0.18 | 28 | 110 | 0.79 | 36 |
+| #3 | 500 | 5 | 0.2 | None | balanced | 0.27 | 0.16 | 26 | 110 | 1.22 | 79 |
+| #9 | 100 | 20 | 0.33 | 10 | balanced_subsample | 0.25 | 0.15 | 21 | 110 | 0.89 | 30 |
+| modelo final | — | — | — | — | — | 0.25 | 0.09 | 23 | 110 | 1.43 | 4 |
+| #10 | 100 | 40 | 0.33 | 10 | balanced_subsample | 0.25 | 0.15 | 24 | 110 | 1.37 | 29 |
+| #4 | 300 | 3 | sqrt | 10 | balanced | 0.24 | 0.17 | 24 | 110 | 1.12 | 33 |
+| #8 | 300 | 3 | 0.33 | None | balanced_subsample | 0.24 | 0.13 | 22 | 110 | 1.16 | 93 |
+| #5 | 300 | 20 | 0.2 | 10 | balanced | 0.22 | 0.10 | 18 | 110 | 1.18 | 44 |
+| #6 | 100 | 10 | 0.33 | 10 | balanced | 0.22 | 0.13 | 17 | 110 | 0.81 | 25 |
 
-Mejor: #8 (F1 0.34); modelo final con la misma regla: 0.27 → diferencia +6.7 puntos.
+Mejor: #7 (F1 0.36); modelo final con la misma regla: 0.25 → diferencia +10.2 puntos.
 
 ## Fugas
 
-Hiperparámetros del modelo final: `{"C": "1.0", "kernel": "rbf", "gamma": "scale", "class_weight": "balanced", "random_state": "0"}`; umbral y confirmación: `(0.3, 3)`. Experimento de MLflow: `fugas`.
+Hiperparámetros del modelo final: `{"C": "10.0", "kernel": "rbf", "gamma": "0.001", "class_weight": "None", "random_state": "0"}`; umbral y confirmación: `(0.5, 2)`. Experimento de MLflow: `fugas`.
 
 ### F1 por pliegue (modelo final)
 
 | Pliegue | Eventos | Detectados | Alarmas | Falsas | Falsas/semana | Precisión | Sensibilidad | F1 |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 11 | 1 | 1 | 0 | 0.00 | 100% | 9% | 0.17 |
-| 2 | 7 | 2 | 9 | 6 | 0.42 | 33% | 29% | 0.31 |
-| 3 | 7 | 5 | 15 | 6 | 0.42 | 60% | 71% | 0.65 |
-| 4 | 7 | 4 | 8 | 2 | 0.14 | 75% | 57% | 0.65 |
-| 5 | 11 | 9 | 26 | 11 | 0.76 | 58% | 82% | 0.68 |
+| 1 | 11 | 3 | 4 | 1 | 0.07 | 75% | 27% | 0.40 |
+| 2 | 7 | 2 | 4 | 0 | 0.00 | 100% | 29% | 0.44 |
+| 3 | 7 | 3 | 6 | 0 | 0.00 | 100% | 43% | 0.60 |
+| 4 | 7 | 3 | 5 | 0 | 0.00 | 100% | 43% | 0.60 |
+| 5 | 11 | 9 | 16 | 2 | 0.14 | 88% | 82% | 0.85 |
 
-Media 0.49, desviación estándar 0.21.
+Media 0.58, desviación estándar 0.16.
 
 ### Curva de aprendizaje
 
@@ -179,11 +178,11 @@ Media 0.49, desviación estándar 0.21.
 
 | Meses | Desde | Eventos (entr.) | Error entrenamiento | Eventos (valid.) | Error validación |
 |---|---|---|---|---|---|
-| 3.3 | 2025-10-09 | 7 | 0.07 | 11 | 0.70 |
-| 6.6 | 2025-06-30 | 14 | 0.03 | 11 | 0.63 |
-| 9.9 | 2025-03-21 | 21 | 0.09 | 11 | 0.33 |
-| 13.3 | 2024-12-11 | 31 | 0.08 | 11 | 0.27 |
-| 16.6 | 2024-09-01 | 37 | 0.14 | 11 | 0.32 |
+| 3.3 | 2025-10-09 | 7 | 0.27 | 11 | 0.34 |
+| 6.6 | 2025-06-30 | 14 | 0.40 | 11 | 0.61 |
+| 9.9 | 2025-03-21 | 21 | 0.20 | 11 | 0.16 |
+| 13.3 | 2024-12-11 | 31 | 0.15 | 11 | 0.10 |
+| 16.6 | 2024-09-01 | 37 | 0.14 | 11 | 0.15 |
 
 ### Sensibilidad a los hiperparámetros
 
@@ -191,34 +190,34 @@ Un hiperparámetro a la vez; los demás, como en el modelo final.
 
 | Hiperparámetro | Valor | F1 medio | Desv. | Detectados | De | Falsas/semana | Umbral elegido |
 |---|---|---|---|---|---|---|---|
-| C | 0.1 | 0.48 | 0.26 | 19 | 43 | 0.22 | (0.4, 2) |
-| C | 0.3 | 0.44 | 0.24 | 19 | 43 | 0.36 | (0.3, 3) |
-| C | 1.0 (final) | 0.49 | 0.21 | 21 | 43 | 0.35 | (0.3, 3) |
-| C | 3.0 | 0.58 | 0.14 | 29 | 43 | 0.55 | (0.3, 2) |
-| C | 10.0 | 0.61 | 0.15 | 30 | 43 | 0.54 | (0.3, 2) |
-| gamma | scale (final) | 0.49 | 0.21 | 21 | 43 | 0.35 | (0.3, 3) |
-| gamma | 0.001 | 0.57 | 0.18 | 22 | 43 | 0.18 | (0.3, 2) |
-| gamma | 0.003 | 0.60 | 0.21 | 26 | 43 | 0.33 | (0.3, 2) |
-| gamma | 0.01 | 0.51 | 0.16 | 22 | 43 | 0.37 | (0.3, 3) |
-| gamma | 0.03 | 0.36 | 0.23 | 16 | 43 | 0.29 | (0.5, 1) |
+| C | 0.1 | 0.43 | 0.22 | 17 | 43 | 0.24 | (0.7, 3) |
+| C | 0.3 | 0.47 | 0.13 | 17 | 43 | 0.22 | (0.7, 3) |
+| C | 1.0 | 0.57 | 0.16 | 22 | 43 | 0.21 | (0.4, 3) |
+| C | 3.0 | 0.65 | 0.10 | 28 | 43 | 0.35 | (0.3, 2) |
+| C | 10.0 (final) | 0.65 | 0.11 | 31 | 43 | 0.37 | (0.3, 1) |
+| gamma | scale | 0.66 | 0.16 | 33 | 43 | 0.53 | (0.3, 2) |
+| gamma | 0.001 (final) | 0.65 | 0.11 | 31 | 43 | 0.37 | (0.3, 1) |
+| gamma | 0.003 | 0.68 | 0.20 | 32 | 43 | 0.39 | (0.3, 2) |
+| gamma | 0.01 | 0.60 | 0.19 | 25 | 43 | 0.29 | (0.3, 3) |
+| gamma | 0.03 | 0.41 | 0.22 | 18 | 43 | 0.33 | (0.3, 3) |
 
 ### Búsqueda al azar (10 configuraciones y el modelo final)
 
 | Configuración | C | gamma | class_weight | F1 medio | Desv. | Detectados | De | Falsas/semana | Segundos |
 |---|---|---|---|---|---|---|---|---|---|
-| #10 | 10.0 | 0.001 | None | 0.61 | 0.14 | 27 | 43 | 0.33 | 12 |
-| #3 | 0.03 | scale | None | 0.58 | 0.11 | 22 | 43 | 0.25 | 16 |
-| #8 | 3.0 | 0.0003 | balanced | 0.51 | 0.22 | 19 | 43 | 0.10 | 43 |
-| modelo final | — | — | — | 0.49 | 0.21 | 21 | 43 | 0.35 | 1 |
-| #6 | 0.3 | scale | balanced | 0.44 | 0.24 | 19 | 43 | 0.36 | 38 |
-| #4 | 0.1 | 0.001 | balanced | 0.43 | 0.22 | 16 | 43 | 0.22 | 50 |
-| #2 | 0.03 | 0.003 | balanced | 0.42 | 0.22 | 14 | 43 | 0.12 | 54 |
-| #1 | 0.03 | 0.0003 | balanced | 0.41 | 0.12 | 18 | 43 | 0.42 | 62 |
-| #9 | 10.0 | 0.03 | balanced | 0.36 | 0.19 | 15 | 43 | 0.30 | 36 |
-| #7 | 1.0 | 0.03 | balanced | 0.36 | 0.23 | 16 | 43 | 0.29 | 36 |
-| #5 | 0.1 | 0.003 | None | 0.31 | 0.25 | 13 | 43 | 0.21 | 14 |
+| modelo final | — | — | — | 0.65 | 0.11 | 31 | 43 | 0.37 | 0 |
+| #10 | 10.0 | 0.0003 | None | 0.61 | 0.19 | 24 | 43 | 0.19 | 11 |
+| #9 | 10.0 | 0.01 | balanced | 0.61 | 0.13 | 29 | 43 | 0.50 | 18 |
+| #8 | 3.0 | scale | balanced | 0.60 | 0.14 | 30 | 43 | 0.57 | 21 |
+| #3 | 0.03 | scale | None | 0.60 | 0.13 | 24 | 43 | 0.29 | 15 |
+| #7 | 1.0 | 0.01 | balanced | 0.56 | 0.15 | 24 | 43 | 0.35 | 27 |
+| #6 | 0.3 | scale | balanced | 0.52 | 0.21 | 22 | 43 | 0.33 | 37 |
+| #4 | 0.1 | 0.001 | balanced | 0.45 | 0.23 | 16 | 43 | 0.18 | 46 |
+| #2 | 0.03 | 0.003 | balanced | 0.42 | 0.22 | 14 | 43 | 0.12 | 50 |
+| #1 | 0.03 | 0.0003 | balanced | 0.40 | 0.13 | 18 | 43 | 0.40 | 61 |
+| #5 | 0.1 | 0.003 | None | 0.39 | 0.23 | 15 | 43 | 0.17 | 14 |
 
-Mejor: #10 (F1 0.61); modelo final con la misma regla: 0.49 → diferencia +11.5 puntos.
+Mejor: modelo final (F1 0.65); modelo final con la misma regla: 0.65 → diferencia +0.0 puntos.
 
 ## Curvas de aprendizaje y sensibilidad
 
@@ -229,60 +228,81 @@ Mejor: #10 (F1 0.61); modelo final con la misma regla: 0.49 → diferencia +11.5
 ## Lectura de los resultados
 
 Esta sección se escribe a mano (`docs/modelos/validacion-cruzada-lectura.md`) y el generador la agrega
-al reporte. Corresponde a la corrida del 11/11/2026.
+al reporte. Corresponde a las corridas del 12/11/2026, con la lluvia de Open-Meteo (RNF-009,
+`docs/modelos/fuente-lluvia.md`), con la que se reentrenaron todos los modelos.
 
-**Cómo leer las diferencias.** Con 5 pliegues y una desviación de 0,06 a 0,21 entre ellos, el error
-estándar de un F1 medio es de 0,03 a 0,09: diferencias de pocos puntos entre configuraciones están
+**Cómo leer las diferencias.** Con 5 pliegues y una desviación de 0,08 a 0,16 entre ellos, el error
+estándar de un F1 medio es de 0,04 a 0,07: diferencias de pocos puntos entre configuraciones están
 dentro del ruido. Además, quedarse con la mejor de 10 configuraciones favorece a la que tuvo suerte
-en los pliegues. Por eso el resultado de la prueba (may–ago 2026), que la búsqueda no vio, es el que
-confirma o no cada cambio.
+en los pliegues. Por eso cada cambio que sugirió la búsqueda se miró también en la prueba
+(may–ago 2026), que la búsqueda no vio, antes de adoptarlo.
 
-**Detector de eventos (Random Forest).** Es el más estable: F1 de 0,63 ± 0,06 entre pliegues
-(cumple la desviación ≤ 0,10). Es menor que en la prueba (78 %) porque los primeros pliegues
-entrenan con pocos meses. La curva de aprendizaje lo muestra: con 3 a 7 meses el error de validación
-es 0,56–0,58; desde unos 10 meses baja a 0,33–0,40 y ya no mejora mucho más. El error de
-entrenamiento es casi cero (el bosque se aprende el entrenamiento), así que lo que limita es la
-variedad de eventos, no el tamaño del modelo. La sensibilidad es plana: de 50 a 400 árboles el F1
-queda en 0,63–0,64; con hojas de 5 a 20 lecturas, 0,63–0,66, y con 40 baja a 0,60 y varía más; con
-25 % a 50 % de las variables por corte, 0,64–0,65. La mejor configuración de la búsqueda gana 1,7
-puntos con el doble de desviación (0,13 contra 0,06): no llega a los 2 puntos, así que **el modelo
-final ya era óptimo** y se mantiene (umbral 0,70, confirmación 3 h).
+**Las tablas son de los modelos antes de adoptar la búsqueda.** Las secciones *F1 por pliegue
+(modelo final)*, la curva de aprendizaje y la sensibilidad de cada modelo se calcularon con la
+configuración que tenía el modelo cuando se corrió la validación; las configuraciones adoptadas son
+las mejores de cada tabla de búsqueda, y ya están en `calidad_agua/hiperparametros.yaml`.
 
-**Anticipación a 24 h (Random Forest por tipo).** Con el umbral que usa el servicio, F1 de 0,32 ±
-0,08 (cumple la desviación). Con la regla de elección sobre los pliegues el modelo anterior da 0,27, y
-la mejor configuración (500 árboles, hojas de 3, 33 % de las variables por corte) 0,34: **+6,7
-puntos, se adoptó**. En la prueba cambia aciertos al azar por menos avisos falsos: anticipa 11 de 16
-eventos con causa (antes 12) y 0 de 11 al azar (antes 3), con 0,91 avisos falsos por semana (antes
-1,82); su F1 en la prueba baja de 59 % a 51 %. Se dejó la nueva configuración, por decisión del
-proyecto: se respeta la regla fijada antes de mirar la prueba, los eventos al azar no tienen señal
-previa (acertarlos era más por avisar seguido que por anticiparlos) y los avisos falsos eran el
-problema pendiente de este modelo. La curva de aprendizaje todavía baja (error de 0,88 con 3 meses a
-0,60 con 13 o más): más historia ayudaría, porque cada tipo tiene pocos eventos. La sensibilidad es
-ruidosa: usar 25 % a 50 % de las variables por corte da 0,30–0,31 contra 0,27 con la raíz cuadrada,
-y cambiar un solo hiperparámetro a la vez no siempre ayuda (500 árboles con hojas de 10 da 0,24): los
-hiperparámetros interactúan.
+**Detector de eventos (HistGradientBoosting).** Con la lluvia de Open-Meteo la regla del notebook 07
+elige HistGradientBoosting en lugar del Random Forest, y la validación se hizo con él (grilla
+`detector_arboles`). Es el más estable: F1 de 0,67 ± 0,08 entre pliegues (cumple la desviación
+≤ 0,10). Es menor que en la prueba porque los primeros pliegues entrenan con pocos meses: la curva
+de aprendizaje baja de un error de validación de 0,53 con 3 meses a 0,39–0,45 desde 13 meses. El
+error de entrenamiento es casi cero, así que lo que limita es la variedad de eventos, no el tamaño
+del modelo. La sensibilidad es plana (0,67–0,69 con cualquier valor de iteraciones, tasa de
+aprendizaje o mínimo por hoja). La mejor configuración de la búsqueda (#9: 150 iteraciones, hasta 63
+hojas, mínimo 80 por hoja, l2 de 3) gana **+3,1 puntos y se adoptó**. En la prueba detecta los mismos
+eventos con menos falsas alarmas: con el procedimiento de esta validación, 16 de 25 con 2 falsas
+alarmas contra 5 (F1 76 % contra 74 %); en el notebook 07, que elige además el umbral y la
+confirmación por bloques, 17 de 25 con 3 falsas alarmas en 4 meses y F1 de 78,5 % (96 % en eventos
+de calidad).
 
-**Fugas (SVM).** El modelo anterior es inestable: F1 de 0,49 ± 0,21 (no cumple). El primer pliegue
-entrena con 3 meses y unas pocas fugas, y detecta 1 de 11; la curva de aprendizaje dice lo mismo
-(error de 0,70 con 3 meses y de 0,27 a 0,33 desde 10 meses). La mejor configuración (C = 10, gamma =
-0,001, sin pesar las clases) da 0,61 ± 0,14: **+11,5 puntos, se adoptó**, y la prueba lo confirma:
-6 de 9 fugas con 1 falsa alarma en 4 meses, F1 de 76 % (antes 5 de 9 con 6 falsas, 50 %). Pesar las
-clases hacía que la SVM avisara demasiado. Sigue sin cumplir la desviación ≤ 0,10 (0,14) y debajo de
-la meta de F1 de 80 %: con pocas fugas para entrenar, los primeros pliegues detectan poco. Con datos
-reales y más fugas registradas debería estabilizarse.
+**Anticipación a 24 h.** Fue el modelo que más cambió:
+
+1. Con el modelo que había al empezar (HistGradientBoosting por tipo) el F1 entre pliegues fue de
+   0,31 ± 0,13, y la mejor configuración de la búsqueda (300 iteraciones, tasa 0,03, 7 hojas,
+   mínimo 20 por hoja, sin l2) dio 0,37: **+5,7 puntos, se adoptó**. En la prueba anticipaba 11 de
+   27 eventos con 0,61 avisos falsos por semana, contra 9 de 27 con 2,43.
+2. Al reentrenar con esa configuración, la regla del notebook 09 eligió el **bosque aleatorio**, que
+   todavía tenía la configuración de la búsqueda hecha con la lluvia del IMN. Se repitió la
+   validación con el bosque (es la sección *Anticipación a 24 h* de este reporte): 0,30 ± 0,12 entre
+   pliegues con su umbral, 0,25 con la regla, y la mejor configuración de la búsqueda (#7: 300
+   árboles, mínimo 40 por hoja, profundidad 20, 33 % de las variables por corte, clases pesadas) dio
+   0,36: **+10,2 puntos, se adoptó**. En la prueba, con el procedimiento de esta validación, anticipa
+   13 de 27 eventos con 1,22 avisos falsos por semana (F1 57 %), contra 9 de 27 (48 %).
+3. Con los dos modelos de árboles ya ajustados con la lluvia de Open-Meteo se corrió el notebook 09
+   una última vez, decidido de antemano que lo que eligiera la regla quedaba como final (sin otra
+   vuelta de búsqueda). La regla eligió la **LSTM**: 30 de 85 eventos con causa anticipados en los
+   bloques, contra 28 de HistGradientBoosting y 26 del bosque. En la prueba anticipa 11 de 27 (10
+   de 16 con causa) con 1,22 avisos falsos por semana: F1 de 46 %. La LSTM no entra en esta
+   búsqueda (`validacion.py` la omite); sus hiperparámetros son los de la sección `anticipacion.lstm`.
+
+La desviación entre pliegues no cumple ≤ 0,10 en ninguna variante (0,12–0,13): el primer pliegue
+entrena con 3 meses y anticipa 1 evento de 22. La curva de aprendizaje todavía baja (error de 0,84
+con 3 meses a 0,57 con 16): más historia ayudaría, porque cada tipo tiene pocos eventos. La
+sensibilidad es ruidosa y los hiperparámetros interactúan: en el bosque, subir el mínimo por hoja
+a 20 da 0,35 y a 40 baja a 0,28, mientras que la configuración #7 combina 40 con profundidad 20 y
+clases pesadas. El F1 de este modelo tiene un techo bajo porque los eventos al azar (40 % de los de
+la prueba) no tienen señal previa.
+
+**Fugas (SVM).** La configuración que salió de la búsqueda con la lluvia del IMN (C = 10, gamma =
+0,001, sin pesar las clases) sigue siendo la mejor con la de Open-Meteo: F1 de 0,65 con la regla, y
+ninguna de las 10 configuraciones la supera, así que **el modelo final ya era óptimo**. Con el umbral
+guardado da 0,58 ± 0,16 entre pliegues, que no cumple la desviación ≤ 0,10: los primeros pliegues
+tienen pocas fugas para entrenar y detectan 2 o 3 de 7 a 11, mientras que el último detecta 9 de 11.
+La curva de aprendizaje lo confirma (error de 0,34 a 0,61 con 3 a 7 meses y de 0,10 a 0,16 desde
+10 meses). En la prueba detecta 6 de 9 fugas con 2 falsas alarmas (F1 72 %, notebook 10).
 
 **Lo que queda para los requisitos.**
 
 - RF-002.3: la validación cruzada temporal, las curvas de aprendizaje y la sensibilidad están en
   este reporte, que se genera solo y se puede repetir con Docker. La desviación ≤ 0,10 se cumple en
-  el detector y la anticipación; en fugas no (0,14 con la configuración nueva).
-- RF-002.4: en la anticipación y las fugas la búsqueda mejoró el F1 en más de 2 puntos y la
-  configuración nueva está en `hiperparametros.yaml`; en el detector se documenta que ya era óptimo.
-  Cada configuración probada quedó en MLflow, en el experimento de su modelo, con sus
-  hiperparámetros, F1 y duración.
-- Las secciones **F1 por pliegue (modelo final)** de la anticipación y las fugas son de los modelos
-  antes de adoptar la búsqueda; los adoptados son las configuraciones #8 (anticipación) y #10
-  (fugas) de cada tabla de búsqueda.
+  el detector; en la anticipación (0,12) y en fugas (0,16) no, por los pocos eventos de los primeros
+  pliegues.
+- RF-002.4: en el detector y en los dos modelos de árboles de la anticipación la búsqueda mejoró el
+  F1 en más de 2 puntos y la configuración nueva está en `hiperparametros.yaml`; en fugas se
+  documenta que ya era óptimo. Cada configuración probada quedó en MLflow, en el experimento de su
+  modelo, con sus hiperparámetros, F1 y duración. El modelo de anticipación que usa el servicio es
+  la LSTM, que se eligió con la validación por bloques del notebook 09 entre los modelos ya ajustados.
 
 ## Cómo repetirlo
 

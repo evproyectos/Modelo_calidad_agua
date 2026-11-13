@@ -389,7 +389,8 @@ def secuencias(X, largo):
     salida = np.zeros((n, largo, k), dtype="float32")
     for j in range(largo):
         desfase = largo - 1 - j
-        salida[desfase:, j, :] = A[: n - desfase]
+        if desfase < n:                  # con menos horas que el largo, el principio queda en 0
+            salida[desfase:, j, :] = A[: n - desfase]
     return salida
 
 

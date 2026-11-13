@@ -50,7 +50,7 @@ duplicados. `<nodo>` es el identificador del punto de medición (p. ej. `J280`).
 | `PH_<nodo>` | float32 | — | 4 – 10 | pH |
 | `P_<nodo>` | float32 | m (columna de agua) | 0 – 150 | Presión en el nodo |
 | `Q_R1` | float32 | L/s | — | Caudal de salida de la fuente (caudalímetro) |
-| `lluvia_mm_h` | float32 | mm/h | ≥ 0 | Lluvia en la estación del IMN |
+| `lluvia_mm_h` | float32 | mm/h | ≥ 0 | Lluvia en la estación del IMN; al cargar se cambia por la de la fuente de entrenamiento (`fuentes_lluvia.py`, RNF-009) |
 | `falla_<PARAM>_<nodo>` | int8 | — | 0 – 5 | Falla del sensor: 0 ninguna, 1 pegado, 2 deriva, 3 picos, 4 ruido, 5 faltante (solo simulación) |
 | `evento_<nodo>` | int8 | — | 0 – 5 | Evento visible en ese sensor: 0 normal, 1 contaminación, 2 falla de cloración, 3 turbidez en la fuente, 4 falla de pH, 5 fuga (solo simulación) |
 | `evento_visible` | int8 | — | 0 – 5 | Evento visible en algún sensor del sistema (se recalcula con los sensores elegidos) |

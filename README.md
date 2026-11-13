@@ -264,7 +264,15 @@ Historical Forecast API) con la de la estación y prueba los tres modelos que da
 sin reentrenar y reentrenados. No modifica ningún módulo de `calidad_agua/`: solo cambia la columna
 `lluvia_mm_h` al cargar los datos. Deja el reporte en `docs/modelos/fuente-lluvia.md` (unos 20 min).
 En resumen: el detector y las fugas no dependen de la fuente; la anticipación sí (usa la lluvia de
-30 días), así que antes de operar con Open-Meteo hay que reentrenarla con esa lluvia.
+30 días), así que los modelos se entrenan con la misma lluvia con que van a operar.
+
+**Con qué lluvia se entrena.** `hiperparametros.yaml`, sección `datos` (hoy `open-meteo` con
+ECMWF), o las variables `FUENTE_LLUVIA` (`lecturas` = la del IMN que trae el dataset, u
+`open-meteo`) y `LLUVIA_MODELOS`. `carga.py` cambia la columna `lluvia_mm_h` al leer los datos
+(`calidad_agua/fuentes_lluvia.py`, capa de ingesta), así que los notebooks y los módulos de
+modelado no se enteran. Al entrenar (`correr_notebooks.py` con alguno de 06 a 10, o
+`reentrenar.py`) queda `modelos/fuente_lluvia.json`, y el servicio de monitoreo usa esa misma
+fuente. El EDA (01 a 05) describe el dataset tal como viene, con la lluvia de la estación.
 
 ## Docker
 
@@ -307,7 +315,7 @@ python herramientas/correr_notebooks.py 06 07     # solo algunos
 | 04 | clima | Lluvia de la zona (IMN, estación ITCR San Carlos), su efecto en turbidez, cloro, pH y temperatura, cuánto aportaría un pronóstico de lluvia y qué pronóstico usar |
 | 05 | eventos | Cómo se ven los eventos (también las fugas) y las fallas en los datos; dónde van los 10 sensores del sistema; vector de etiquetas |
 | 06 | modelo_pronostico | Modelo de pronóstico a 24 h (árboles), qué información de clima usar y evaluación contra la meta |
-| 07 | detector_eventos | Detector de eventos (Random Forest): alarmas, tipo de evento y falsas alarmas; comparación con HistGradientBoosting e Isolation Forest |
+| 07 | detector_eventos | Detector de eventos (HistGradientBoosting): alarmas, tipo de evento y falsas alarmas; comparación con Random Forest e Isolation Forest |
 | 08 | red_neuronal | Red LSTM (TensorFlow/Keras), comparación con los árboles y modelo final de pronóstico |
 | 09 | anticipacion_eventos | Probabilidad de que empiece un evento en las próximas 24 h (lluvia, deterioro en la fuente, baja presión): árboles, bosque aleatorio, Isolation Forest y LSTM; anticipación y avisos falsos; horizonte de 48 h; llegada de los eventos de la fuente a cada sensor |
 | 10 | fugas | Fugas con el caudal de la fuente y la presión de los sensores: regresión de la operación normal y línea base de la semana; Random Forest, SVM y Autoencoder (percentil 95); tramo de la fuga entre dos sensores (RF-002.2) |

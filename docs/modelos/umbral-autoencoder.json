@@ -1,0 +1,79 @@
+{
+  "fuente_lluvia": {
+    "fuente": "open-meteo",
+    "modelos": [
+      "ecmwf_ifs025"
+    ]
+  },
+  "arquitectura": {
+    "capas": [
+      32,
+      16,
+      6
+    ],
+    "tasa_aprendizaje": 0.001,
+    "epocas": 60,
+    "paciencia": 5,
+    "lote": 256,
+    "percentil": 95,
+    "semilla": 0
+  },
+  "variables": 123,
+  "horas_normales_entrenamiento": 9426,
+  "umbral_percentil_95": 0.5859781503677368,
+  "umbral_segunda_corrida": 0.5859781503677368,
+  "diferencia_relativa_entre_corridas": 0.0,
+  "percentiles_error_normal_entrenamiento": {
+    "50": 0.2694142758846283,
+    "75": 0.36032620072364807,
+    "90": 0.47978657484054565,
+    "95": 0.5859781503677368,
+    "99": 0.9656165838241577,
+    "99.9": 1.588226556777954
+  },
+  "error_medio_normal_entrenamiento": 0.30719849467277527,
+  "puntaje_por_particion": {
+    "entrenamiento": {
+      "normal": {
+        "horas": 9426,
+        "pct_sobre_umbral": 5.01,
+        "pct_sobre_4_umbrales": 0.0,
+        "mediana_en_umbrales": 0.46
+      },
+      "fuga": {
+        "horas": 946,
+        "pct_sobre_umbral": 38.58,
+        "pct_sobre_4_umbrales": 6.13,
+        "mediana_en_umbrales": 0.761
+      }
+    },
+    "validacion": {
+      "normal": {
+        "horas": 2002,
+        "pct_sobre_umbral": 15.08,
+        "pct_sobre_4_umbrales": 0.05,
+        "mediana_en_umbrales": 0.565
+      },
+      "fuga": {
+        "horas": 318,
+        "pct_sobre_umbral": 40.88,
+        "pct_sobre_4_umbrales": 2.52,
+        "mediana_en_umbrales": 0.807
+      }
+    },
+    "prueba": {
+      "normal": {
+        "horas": 2479,
+        "pct_sobre_umbral": 2.3,
+        "pct_sobre_4_umbrales": 0.0,
+        "mediana_en_umbrales": 0.435
+      },
+      "fuga": {
+        "horas": 207,
+        "pct_sobre_umbral": 45.41,
+        "pct_sobre_4_umbrales": 8.21,
+        "mediana_en_umbrales": 0.835
+      }
+    }
+  }
+}

@@ -87,9 +87,11 @@ herramientas/ correr_notebooks.py: corre todos los notebooks en orden y los guar
               validacion_cruzada.py: validación cruzada y búsqueda de hiperparámetros;
               fuente_lluvia.py: los modelos con la lluvia de Open-Meteo en vez de la del IMN;
               publicar_modelos.py: empaqueta los modelos y MLflow para el release;
-              dataset_maestro.py: exporta el dataset maestro preprocesado (Parquet y CSV)
-docs/         esquema del dataset (docs/datos); variables de los modelos, validación cruzada y
-              segunda fuente de lluvia (docs/modelos)
+              dataset_maestro.py: exporta el dataset maestro preprocesado (Parquet y CSV);
+              umbral_autoencoder.py: el umbral del Autoencoder de fugas y su distribución
+docs/         esquema del dataset y metodología de etiquetado (docs/datos); variables de los
+              modelos, comparación de modelos de contaminación y de fugas, umbral del
+              Autoencoder, validación cruzada y segunda fuente de lluvia (docs/modelos)
 Dockerfile, docker-compose.yml   notebooks, reentrenamiento y validación en Docker
 registros/    registro del preprocesamiento (lo escriben los notebooks; no se versiona)
 ```
@@ -109,6 +111,8 @@ entrenar y en el servicio en tiempo real:
 `etiquetas.py` arma el vector de etiquetas (`etiqueta` 0/1 y `fuente_etiqueta`) con los resultados
 de laboratorio, los registros de fugas de la ASADA o, si no hay, 3 lecturas seguidas fuera de la
 norma. Con el simulador, los modelos usan su verdad, y el notebook 05 compara la regla contra ella.
+La lógica, el volumen de cada fuente y la distribución de clases están en
+`docs/datos/metodologia-etiquetado.md`.
 
 El dataset maestro preprocesado, con las etiquetas, se exporta con un comando:
 
@@ -319,3 +323,8 @@ python herramientas/correr_notebooks.py 06 07     # solo algunos
 | 08 | red_neuronal | Red LSTM (TensorFlow/Keras), comparación con los árboles y modelo final de pronóstico |
 | 09 | anticipacion_eventos | Probabilidad de que empiece un evento en las próximas 24 h (lluvia, deterioro en la fuente, baja presión): árboles, bosque aleatorio, Isolation Forest y LSTM; anticipación y avisos falsos; horizonte de 48 h; llegada de los eventos de la fuente a cada sensor |
 | 10 | fugas | Fugas con el caudal de la fuente y la presión de los sensores: regresión de la operación normal y línea base de la semana; Random Forest, SVM y Autoencoder (percentil 95); tramo de la fuga entre dos sensores (RF-002.2) |
+
+Los reportes de comparación que piden los requisitos resumen los notebooks 07 y 09
+(`docs/modelos/comparacion-contaminacion.md`, RF-002.1) y 10 (`docs/modelos/comparacion-fugas.md`
+y `docs/modelos/umbral-autoencoder.md`, RF-002.2), con exactitud, precisión, sensibilidad, F1 y
+AUC-ROC de cada modelo comparado.

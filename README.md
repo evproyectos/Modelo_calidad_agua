@@ -84,6 +84,7 @@ modelos/      modelos entrenados (se generan con los notebooks 06 a 10; no se ve
 artefactos.json  release de GitHub con los modelos y la historia de MLflow, y la huella de cada archivo
 herramientas/ correr_notebooks.py: corre todos los notebooks en orden y los guarda;
               reentrenar.py: vuelve a entrenar todos los modelos;
+              registrar_modelos.py: versiones de los modelos en MLflow (y volver a una anterior);
               validacion_cruzada.py: validación cruzada y búsqueda de hiperparámetros;
               fuente_lluvia.py: los modelos con la lluvia de Open-Meteo en vez de la del IMN;
               publicar_modelos.py: empaqueta los modelos y MLflow para el release;
@@ -237,6 +238,35 @@ mlflow ui --backend-store-uri sqlite:///mlflow.db --workers 1
 y abrir **http://127.0.0.1:5000**. Experimentos: `pronostico_24h` (notebooks 06 y 08),
 `detector_eventos` (notebook 07), `anticipacion_eventos` (notebook 09) y `fugas` (notebook 10).
 
+## Versiones de los modelos (RF-004.2)
+
+Cada modelo que usa el servicio de monitoreo está en el **Model Registry** de MLflow (pestaña
+**Models**), con versiones numeradas. `reentrenar.py` registra al final los modelos nuevos
+(`calidad_agua/registro_modelos.py`): cada modelo reentrenado sube una versión y recibe el alias
+`produccion`, y los que no se tocaron siguen igual.
+
+| Modelo registrado | Archivos | Notebook |
+|---|---|---|
+| `pronostico_24h` | `pronostico_24h_final.joblib` y `lstm_24h_semilla*.keras` | 08 |
+| `detector_eventos` | `detector_eventos.joblib` | 07 |
+| `anticipacion_eventos` | `anticipacion_24h.joblib` y, si ganó la LSTM, `anticipacion_lstm_*.keras` | 09 |
+| `fugas` | `fugas.joblib` y, si ganó el Autoencoder, `fugas_autoencoder.keras` | 10 |
+
+Cada versión apunta a la corrida que la entrenó (métricas, datos, commit) y guarda en sus
+etiquetas el SHA-256 de cada archivo. `modelos/versiones.json` resume las versiones que hay en
+`modelos/`; el servicio de monitoreo las muestra en `/health` (`modelos.<modelo>.registro`).
+
+```
+python herramientas/registrar_modelos.py                      # registra lo que hay en modelos/
+python herramientas/registrar_modelos.py --lista              # versiones de cada modelo
+python herramientas/registrar_modelos.py --restaurar fugas 2  # vuelve a la versión 2 de fugas
+```
+
+Registrar dos veces lo mismo no sube la versión: solo sube cuando la corrida es nueva. La primera
+vez (modelos entrenados antes de que existiera el registro) crea la versión 1 de cada uno.
+`--restaurar` copia a `modelos/` los archivos de esa versión, guardados en su corrida, y le pasa
+el alias `produccion`; el servicio de monitoreo los carga solo, como después de un reentrenamiento.
+
 ## Validación cruzada y búsqueda de hiperparámetros (RF-002.3 y RF-002.4)
 
 ```
@@ -328,3 +358,15 @@ Los reportes de comparación que piden los requisitos resumen los notebooks 07 y
 (`docs/modelos/comparacion-contaminacion.md`, RF-002.1) y 10 (`docs/modelos/comparacion-fugas.md`
 y `docs/modelos/umbral-autoencoder.md`, RF-002.2), con exactitud, precisión, sensibilidad, F1 y
 AUC-ROC de cada modelo comparado.
+
+## Licencia
+
+Licencia **MIT** (`LICENSE`), Copyright (c) 2026 Emanuel Vargas y ASADA La Lucha. Cubre el código,
+los notebooks y los modelos entrenados que se publican en el release de GitHub (`modelos.zip` y
+`mlflow.zip`): se pueden usar, cambiar y redistribuir, también para otras ASADAS, manteniendo el
+aviso de autoría. No incluye:
+
+- **`clima/*.csv`:** datos de [Open-Meteo](https://open-meteo.com), con licencia CC BY 4.0. Quien
+  los reutilice tiene que citar a Open-Meteo.
+- **Las librerías** (scikit-learn, TensorFlow, MLflow, pandas…), que tienen sus propias licencias.
+- **El dataset**, que no está en este repositorio: lo genera el proyecto `Simulador_sensor`.

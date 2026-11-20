@@ -103,9 +103,9 @@ comparados con los mismos notebooks con la lluvia de la estación del IMN:
 
 | Modelo | Con la lluvia del IMN | Con la lluvia de Open-Meteo |
 |---|---|---|
-| Pronóstico a 24 h (notebook 08), acierto en operación normal | cloro 88 %, turbidez 48 %, pH 79,5 % | cloro 88 %, turbidez 49 %, pH 79,6 % |
+| Pronóstico a 24 h (notebook 08), acierto en operación normal | cloro 88 %, turbidez 48 %, pH 79,5 % | cloro 88 %, turbidez 49 %, pH 79,7 % |
 | Detector (notebook 07) | Random Forest: 15 de 16 eventos de calidad, 0 falsas alarmas, F1 78 % | HistGradientBoosting: 16 de 16 (y 1 fuga), 3 falsas alarmas, F1 78,5 % |
-| Anticipación a 24 h (notebook 09) | bosque: 11 de 16 con causa, 0,9 avisos falsos por semana, F1 51 % | LSTM: 10 de 16 con causa, 1,2 por semana, F1 46 % |
+| Anticipación a 24 h (notebook 09) | bosque: 11 de 16 con causa, 0,9 avisos falsos por semana, F1 51 % | LSTM: 11 de 16 con causa, 2,0 por semana, F1 45 % |
 | Fugas (notebook 10) | SVM: 6 de 9, 1 falsa alarma, F1 76 % | SVM: 6 de 9, 2 falsas alarmas, F1 72 % |
 
 (F1 por evento contando todos los eventos de la prueba, también los que ese modelo no busca.) Con
@@ -116,13 +116,14 @@ de la anticipación (`docs/modelos/validacion-cruzada.md`), y la columna de Open
 - **El pronóstico, el detector y las fugas quedan igual.** Con Open-Meteo la regla de elección del
   notebook 07 prefiere HistGradientBoosting al bosque (más eventos detectados y menos falsas
   alarmas en la validación por bloques); en la prueba quedan empatados (F1 78,5 % y 78 %).
-- **La anticipación pierde**, sobre todo en las contaminaciones por lluvia y baja presión (3 de 5
-  contra 4 de 5) y en las fugas que crecen: en el simulador las causa la lluvia que cae en el sitio,
-  que Open-Meteo solo aproxima. La regla del notebook 09 elige ahora la LSTM entre los cuatro
-  modelos; con la primera versión reentrenada (HistGradientBoosting con la configuración anterior)
-  los avisos falsos pasaban el tope de la regla en la prueba (2,7 por semana) y con la búsqueda de
-  hiperparámetros bajaron a 1,2. Sigue siendo el modelo más débil (F1 de 46 % contra 51 % con la
-  lluvia de la estación). Sus avisos son amarillos; las alarmas las dan el detector y el de fugas.
+- **La anticipación pierde.** Anticipa tantos eventos con causa como con la lluvia de la estación
+  (11 de 16), pero con más del doble de avisos falsos (2,0 por semana contra 0,9): las
+  contaminaciones por lluvia y baja presión dependen de la lluvia que cae en el sitio, que
+  Open-Meteo solo aproxima. La regla del notebook 09 elige ahora la LSTM entre los cuatro modelos;
+  con la primera versión reentrenada (HistGradientBoosting con la configuración anterior) los
+  avisos falsos pasaban el tope de la regla en la prueba (2,7 por semana). Sigue siendo el modelo
+  más débil (F1 de 45 % contra 51 % con la lluvia de la estación; la LSTM varía un poco entre
+  máquinas, ver `comparacion-contaminacion.md`). Sus avisos son amarillos; las alarmas las dan el detector y el de fugas.
 - **Lo que más ayudaría es lluvia medida en La Lucha.** Un pluviómetro que mande sus datos junto
   con las lecturas (`FUENTE_LLUVIA=lecturas`) daría lluvia como la de la estación, con la que la
   anticipación rinde más; también subiría el techo de la turbidez del pronóstico (notebook 06:

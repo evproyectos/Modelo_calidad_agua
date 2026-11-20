@@ -44,9 +44,10 @@ de calidad).
    13 de 27 eventos con 1,22 avisos falsos por semana (F1 57 %), contra 9 de 27 (48 %).
 3. Con los dos modelos de árboles ya ajustados con la lluvia de Open-Meteo se corrió el notebook 09
    una última vez, decidido de antemano que lo que eligiera la regla quedaba como final (sin otra
-   vuelta de búsqueda). La regla eligió la **LSTM**: 30 de 85 eventos con causa anticipados en los
-   bloques, contra 28 de HistGradientBoosting y 26 del bosque. En la prueba anticipa 11 de 27 (10
-   de 16 con causa) con 1,22 avisos falsos por semana: F1 de 46 %. La LSTM no entra en esta
+   vuelta de búsqueda). La regla eligió la **LSTM**: 31 de 85 eventos con causa anticipados en los
+   bloques, contra 28 de HistGradientBoosting y 26 del bosque. En la prueba anticipa 12 de 27 (11
+   de 16 con causa) con 1,98 avisos falsos por semana: F1 de 45 % (corrida en la PC del proyecto;
+   la LSTM varía un poco entre máquinas, ver `comparacion-contaminacion.md`). La LSTM no entra en esta
    búsqueda (`validacion.py` la omite); sus hiperparámetros son los de la sección `anticipacion.lstm`.
 
 La desviación entre pliegues no cumple ≤ 0,10 en ninguna variante (0,12–0,13): el primer pliegue

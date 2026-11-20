@@ -17,8 +17,9 @@ Tipos de evento de calidad:
   pH. Los sensores no miden conductividad.
 
 Los dos modelos se entrenaron con los 10 sensores del sistema y la lluvia de Open-Meteo (RNF-009).
-Los números son del periodo de prueba (may – ago 2026), que no se usó para decidir nada. Todo quedó
-en MLflow:
+Los números son del periodo de prueba (may – ago 2026), que no se usó para decidir nada, y salen de
+la corrida en Docker en la PC del proyecto (`docker compose run --rm reentrenar`, nov 2026): son los
+modelos que usa el servicio, versión 1 en el Model Registry de MLflow. Todo quedó en MLflow:
 
 - Anticipación: experimento `anticipacion_eventos`, corridas `09 · LSTM`, `09 · bosque aleatorio`,
   `09 · árboles` y `09 · Isolation Forest`.
@@ -66,7 +67,7 @@ Los dos de árboles tienen los hiperparámetros de la búsqueda al azar del RF-0
 
 | Modelo | Con causa anticipados | Avisos falsos por semana | Precisión por evento | Sensibilidad por evento | **F1 por evento** | AUC-ROC por hora |
 |---|---|---|---|---|---|---|
-| **LSTM (elegido)** | **30 de 85** | 1,00 | 52,0 % | 28,6 % | **36,9 %** | 0,59 |
+| **LSTM (elegido)** | **31 de 85** | 1,11 | 50,0 % | 29,3 % | **37,0 %** | 0,58 |
 | HistGradientBoosting | 28 de 85 | 0,91 | 54,8 % | 27,1 % | 36,2 % | 0,56 |
 | Isolation Forest (sin tipo) | 40 de 85 | 1,77 | 34,7 % | 33,8 % | 34,3 % | 0,56 |
 | Random Forest | 26 de 85 | 0,72 | 53,6 % | 24,8 % | 33,9 % | 0,57 |
@@ -75,38 +76,46 @@ Los dos de árboles tienen los hiperparámetros de la búsqueda al azar del RF-0
 
 | Modelo | Anticipados | Con causa | Avisos (falsos) | Exactitud por hora | Precisión por evento | Sensibilidad por evento | F1 por evento | AUC-ROC por hora |
 |---|---|---|---|---|---|---|---|---|
-| **LSTM (elegido)** | **11 de 27** | **10 de 16** | 17 (8) | 68,0 % | 52,9 % | **40,7 %** | 46,1 % | **0,67** |
+| **LSTM (elegido)** | **12 de 27** | **11 de 16** | 24 (13) | 66,2 % | 45,8 % | **44,4 %** | 45,1 % | 0,64 |
 | Random Forest | 10 de 27 | 8 de 16 | 14 (3) | 66,2 % | 78,6 % | 37,0 % | **50,3 %** | 0,60 |
 | Isolation Forest | 10 de 27 | 9 de 16 | 17 (7) | 65,9 % | 58,8 % | 37,0 % | 45,5 % | 0,64 |
 | HistGradientBoosting | 8 de 27 | 8 de 16 | 9 (1) | 67,1 % | **88,9 %** | 29,6 % | 44,4 % | 0,64 |
 
-Por hora, la LSTM tiene precisión de 76,1 %, sensibilidad de 19,6 % y F1 de 31,2 %. Los demás
+Por hora, la LSTM tiene precisión de 64,0 %, sensibilidad de 19,8 % y F1 de 30,2 %. Los demás
 modelos quedan entre 74 % y 99 % de precisión, 11 % y 12 % de sensibilidad y 20 % y 21 % de F1.
 
 **Por qué la LSTM:**
 
 - Es la que más eventos con causa anticipa en la validación por bloques, que es la regla.
-- Es también la de **mejor F1 en la validación** (36,9 %).
+- Es también la de **mejor F1 en la validación** (37,0 %).
 - El Isolation Forest anticipa más en los bloques, pero con casi el doble de avisos falsos y sin
   decir qué tipo de evento viene, así que no sirve para decidir qué revisar.
-- En la prueba, la LSTM anticipa más eventos (11 de 27, 10 de 16 con causa) con el mejor AUC-ROC.
-  El Random Forest tiene mejor F1 en la prueba (50 % contra 46 %) porque avisa menos y se equivoca
-  menos. Las diferencias son de 1 a 3 eventos de 27 y la elección estaba fija antes de mirar la
-  prueba, así que se reporta tal cual.
+- En la prueba, la LSTM anticipa más eventos (12 de 27, 11 de 16 con causa), pero con más avisos
+  falsos: 1,98 por semana, justo debajo del límite de 2 de la regla. El Random Forest tiene mejor
+  F1 en la prueba (50 % contra 45 %) porque avisa menos y se equivoca menos. Las diferencias son de
+  2 a 4 eventos de 27 y la elección estaba fija antes de mirar la prueba, así que se reporta tal
+  cual.
+
+**La LSTM varía un poco entre máquinas.** Los modelos de árboles dan exactamente lo mismo en
+cualquier computadora. La LSTM no: con la misma semilla, TensorFlow suma en otro orden según el
+procesador, y eso cambia algunos avisos. En otra máquina, la misma LSTM anticipó 11 de 27 eventos
+(10 de 16 con causa) con 1,22 avisos falsos por semana, y F1 de 46 %. Los números de este reporte
+son los de la PC del proyecto, que son los modelos en servicio. Por eso cada versión del Model
+Registry guarda la huella de sus archivos: lo que se evalúa es exactamente lo que se usa.
 
 **Lo que anticipa la LSTM en la prueba**, por tipo y causa:
 
 | Tipo | Causa | Anticipados | Antelación mediana |
 |---|---|---|---|
-| Falla de cloración | Deterioro gradual | 2 de 2 | 24 h |
+| Falla de cloración | Deterioro gradual | 2 de 2 | 20,5 h |
 | Falla de pH | Deterioro gradual | 2 de 2 | 5,5 h |
-| Turbidez en la fuente | Tormenta | 3 de 3 | 7 h |
-| Contaminación | Lluvia + baja presión | 3 de 5 | 24 h |
+| Turbidez en la fuente | Tormenta | 2 de 3 | 15,5 h |
+| Contaminación | Lluvia + baja presión | 4 de 5 | 24 h |
 | Contaminación | Al azar | 0 de 7 | — |
-| Fuga | Deterioro gradual | 0 de 4 | — |
-| Fuga | Al azar | 1 de 4 | 10 h |
+| Fuga | Deterioro gradual | 1 de 4 | 7 h |
+| Fuga | Al azar | 1 de 4 | 4 h |
 
-El tipo esperado es correcto en 8 de los 11 avisos que acertaron. Los eventos **al azar** (11 de
+El tipo esperado es correcto en 7 de los 12 avisos que acertaron. Los eventos **al azar** (11 de
 los 27) no tienen ninguna señal previa en el simulador, así que ningún modelo puede anticiparlos.
 Aunque se anticiparan todos los que tienen causa, la sensibilidad no pasaría de 16 de 27 (59 %).
 
@@ -156,20 +165,20 @@ el F1 es de 96 % (precisión 93 %, sensibilidad 100 %). Las fugas las detecta el
 
 | Criterio | Estado |
 |---|---|
-| (1) Precisión ≥ 80 % en la prueba del modelo seleccionado | **Detección: cumple** (92,9 % por evento, 88,4 % por hora). **Anticipación a 24 h: no cumple** (52,9 % por evento, 76,1 % por hora). Ver abajo |
+| (1) Precisión ≥ 80 % en la prueba del modelo seleccionado | **Detección: cumple** (92,9 % por evento, 88,4 % por hora). **Anticipación a 24 h: no cumple** (45,8 % por evento, 64,0 % por hora). Ver abajo |
 | (2) Resultados en MLflow con parámetros, métricas y artefactos | Cumple: una corrida por modelo comparado, con umbral, métricas de bloques y de prueba; y la corrida del modelo guardado con el archivo, tablas y figuras |
 | (3) Este reporte en `/docs/modelos/comparacion-contaminacion.md` | Cumple |
-| (4) El notebook de entrenamiento corre sin errores en Docker | `docker compose run --rm notebooks` (Modelo_calidad_agua). Pendiente de correr en la máquina del proyecto para el release final |
+| (4) El notebook de entrenamiento corre sin errores en Docker | Cumple: los notebooks 07 y 09 corrieron completos en Docker en la PC del proyecto (`docker compose run --rm reentrenar`, nov 2026) |
 | Comparar al menos Random Forest, Isolation Forest y LSTM | Cumple en la anticipación a 24 h (y HistGradientBoosting). En la detección: Random Forest, HistGradientBoosting e Isolation Forest |
 | Exactitud, precisión, recall, F1 y AUC-ROC | Cumple: tablas de arriba |
-| Elegir el de mejor F1 en la validación | Cumple: LSTM (36,9 %) y HistGradientBoosting (más detectados y menos falsas que el Random Forest) |
+| Elegir el de mejor F1 en la validación | Cumple: LSTM (37,0 %) y HistGradientBoosting (más detectados y menos falsas que el Random Forest) |
 
 **Sobre la precisión de la anticipación.** La anticipación es el modelo más débil del sistema:
 
 - **Eventos al azar.** 4 de cada 10 eventos de la prueba no tienen ninguna señal previa.
 - **Lluvia aproximada.** Las contaminaciones dependen de la lluvia que cae en La Lucha, y la de
-  Open-Meteo solo la aproxima. Con la lluvia de la estación del IMN, el mismo notebook anticipaba
-  11 de 16 eventos con causa, con F1 de 51 % (`docs/modelos/fuente-lluvia.md`).
+  Open-Meteo solo la aproxima. Con la lluvia de la estación del IMN, el mismo notebook llegaba a
+  F1 de 51 % (`docs/modelos/fuente-lluvia.md`).
 - **Avisos amarillos.** Por eso sus avisos son amarillos y no alarmas: la alarma roja la da el
   detector, que sí cumple el criterio.
 - **Margen de mejora.** Lo que más lo mejoraría es medir la lluvia en La Lucha con un pluviómetro

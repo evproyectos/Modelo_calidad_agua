@@ -6,6 +6,9 @@ Uso, desde la raíz del proyecto y con el entorno activado:
     python herramientas/correr_notebooks.py              # todos (01 a 10)
     python herramientas/correr_notebooks.py 06 07 09     # solo esos
 
+--sin-anotar y --solo-anotar los usa reentrenar.py, que corre varios a la vez: cada uno sin
+escribir modelos/fuente_lluvia.json, y esa nota una sola vez al final.
+
 Si un notebook falla, se detiene y muestra el error; los anteriores quedan guardados.
 
 Lluvia (RNF-009): el EDA (01 a 05) describe el dataset tal como viene, con la lluvia de la estación
@@ -60,7 +63,10 @@ def correr(ruta):
 
 
 if __name__ == "__main__":
-    pedidos = sys.argv[1:]
+    pedidos = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if "--solo-anotar" in sys.argv:
+        print(f"Lluvia de los modelos: {anotar_fuente_lluvia().read_text(encoding='utf-8').strip()}")
+        sys.exit(0)
     notebooks = sorted(p for p in CARPETA.glob("[0-9][0-9]_*.ipynb")
                        if not pedidos or p.name[:2] in pedidos)
     total = time.time()
@@ -75,6 +81,6 @@ if __name__ == "__main__":
             print(str(e)[-3000:])
             sys.exit(1)
     fuente_lluvia("", original)
-    if any(r.name[:2] in MODELOS for r in notebooks):
+    if any(r.name[:2] in MODELOS for r in notebooks) and "--sin-anotar" not in sys.argv:
         print(f"Lluvia de los modelos: {anotar_fuente_lluvia().read_text(encoding='utf-8').strip()}")
     print(f"\nTodo listo en {(time.time() - total) / 60:.1f} min")

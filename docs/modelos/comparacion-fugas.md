@@ -127,8 +127,8 @@ ningún bloque, y la prueba lo confirma.
 
 **Antelación.** El RF-002.2 pide además detectar fugas con 24 h de antelación. Una fuga que
 empieza pequeña y crece se intenta anticipar en el notebook 09, junto con los otros tipos de
-evento, pero con los datos simulados no se anticipa ninguna en la prueba (0 de 4). El exceso de
-caudal antes de la rotura es pequeño frente a la variación normal del consumo
+evento. Con los datos simulados se anticipa 1 de 4 en la prueba, 7 h antes de la rotura: el
+exceso de caudal antes de la rotura es pequeño frente a la variación normal del consumo
 (`docs/modelos/comparacion-contaminacion.md`). Este modelo detecta la fuga cuando el tubo ya se
 rompió: 4,5 h después en mediana.
 

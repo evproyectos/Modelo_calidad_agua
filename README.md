@@ -238,6 +238,23 @@ mlflow ui --backend-store-uri sqlite:///mlflow.db --workers 1
 y abrir **http://127.0.0.1:5000**. Experimentos: `pronostico_24h` (notebooks 06 y 08),
 `detector_eventos` (notebook 07), `anticipacion_eventos` (notebook 09) y `fugas` (notebook 10).
 
+## Reentrenar (RF-004.2)
+
+```
+python herramientas/reentrenar.py              # o, sin instalar nada: docker compose run --rm reentrenar
+python herramientas/reentrenar.py 07 10        # solo esos notebooks
+python herramientas/reentrenar.py --en-serie   # uno por uno, si la máquina tiene poca memoria
+```
+
+Corre los notebooks de modelos con los datos de `DATOS_SENSORES`, guarda los modelos en `modelos/`
+con la referencia de deriva y los registra en MLflow con versión nueva (abajo). El servicio de
+monitoreo los carga solo, sin reiniciarlo. Los notebooks corren en tres filas a la vez, porque
+ninguno usa lo que guarda otro: el 09, que es el más largo; el 06 y luego el 08; y el 07 y luego el
+10. Lo que imprime cada kernel queda en `artefactos/reentrenamiento/<notebook>.log`.
+
+Tiempo con el dataset completo en la PC del proyecto (Docker, nov 2026; el criterio es ≤ 30 min):
+34,7 min en serie (06: 3,2; 07: 5,7; 08: 6,3; 09: 18,0; 10: 1,3). En paralelo: pendiente de medir.
+
 ## Versiones de los modelos (RF-004.2)
 
 Cada modelo que usa el servicio de monitoreo está en el **Model Registry** de MLflow (pestaña

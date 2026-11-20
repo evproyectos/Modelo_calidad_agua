@@ -252,8 +252,17 @@ monitoreo los carga solo, sin reiniciarlo. Los notebooks corren en tres filas a 
 ninguno usa lo que guarda otro: el 09, que es el más largo; el 06 y luego el 08; y el 07 y luego el
 10. Lo que imprime cada kernel queda en `artefactos/reentrenamiento/<notebook>.log`.
 
-Tiempo con el dataset completo en la PC del proyecto (Docker, nov 2026; el criterio es ≤ 30 min):
-34,7 min en serie (06: 3,2; 07: 5,7; 08: 6,3; 09: 18,0; 10: 1,3). En paralelo: pendiente de medir.
+Tiempo con el dataset completo en la PC del proyecto (Docker, nov 2026), contra el criterio 2 del
+RF-004.2 (≤ 30 min):
+
+| Forma | Notebooks | Total |
+|---|---|---|
+| En paralelo (la de siempre) | 20,0 min (09: 20,0; 06 → 08: 8,0 + 7,2; 07 → 10: 8,9 + 2,1) | unos 21 min, con la deriva y las versiones |
+| En serie (`--en-serie`) | 34,7 min (06: 3,2; 07: 5,7; 08: 6,3; 09: 18,0; 10: 1,3) | unos 35 min |
+
+En paralelo cada notebook tarda más porque comparten la CPU, pero el total queda en lo que tarda el
+09. Los resultados son los mismos de las dos formas: en esa PC, dos reentrenamientos seguidos dieron
+exactamente las mismas métricas en los cinco notebooks.
 
 ## Versiones de los modelos (RF-004.2)
 
